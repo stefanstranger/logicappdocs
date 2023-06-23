@@ -7,7 +7,10 @@ Param(
     [string]$ResourceGroupName,
 
     [Parameter(Mandatory=$true)]
-    [string]$LogicAppName
+    [string]$LogicAppName,
+
+    [Parameter(Mandatory = $false)]
+    [string]$OutputPath
 )
 
 Set-StrictMode -Version 3.0
@@ -20,6 +23,11 @@ else {
     Write-Verbose 'Installing PowerShell Module PSDocs'
     Install-Module PSDocs -RequiredVersion 0.9.0 -Scope CurrentUser -Repository PSGallery -SkipPublisherCheck -Confirm:$false -Force | Out-Null
 }
+#endregion
+
+#region Set Variables
+$templateName = 'Azure-LogicApp-Documentation'
+$templatePath = (Join-Path $PSScriptRoot 'LogicApp.Doc.ps1')
 #endregion
 
 #region Helper Functions
@@ -36,19 +44,6 @@ Function Get-Action {
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
         $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '')
-        <#
-        $runAfter = if ($action.runAfter.PSObject.Properties.Name) {
-            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '')
-        }
-        elseif (!($action.runAfter.PSObject.Properties.Name) -and $Parent) {
-            # if Runafter is empty but has parent use parent.
-            $Parent -replace '(-False|-True)', ''
-        }
-        else {
-            # if Runafter is empty and has no parent use null.
-            $null
-        }
-        #>
 
         # new runafter code
         $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {
@@ -64,9 +59,6 @@ Function Get-Action {
         }
 
         $type = $action.type
-
-        # Create childActions 
-        #$childActions = if ($action.Actions) { $action.Actions.PSObject.Properties.Name } else { $null }
 
         # new ChildActions code
         $childActions = if ($action | Get-Member -MemberType Noteproperty -Name 'Actions') { $action.Actions.PSObject.Properties.Name } else { $null }
@@ -131,7 +123,7 @@ $objects | Group-Object -Property Parent | ForEach-Object {
             $mermaidCode += "        $childAction" + [Environment]::NewLine
         }
         $mermaidCode += "    end" + [Environment]::NewLine
-        $mermaidCode += [Environment]::NewLine
+        #$mermaidCode += [Environment]::NewLine
     }
     else {}        
 }
@@ -149,5 +141,22 @@ foreach ($object in $objects) {
 $firstAction = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
 $mermaidCode += "    Trigger --> $firstAction" + [Environment]::NewLine
 
-$mermaidCode
+#region Generate Markdown documentation for Logic App Workflow
+Write-Output -InputObject 'Logic App Workflow Markdown document is being created'
+$InputObject = [pscustomobject]@{
+    'LogicApp' = [PSCustomObject]@{
+        Name              = $LogicApp.name
+        ResourceGroupName = $resourceGroupName
+        Location          = $LogicApp.location
+        SubscriptionName  =  (Get-AzContext).Subscription.Name
 
+    }
+    'Actions'  = $objects
+    'Diagram'  = $mermaidCode
+
+}
+
+$options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
+$null = [PSDocs.Configuration.PSDocumentOption]$Options
+Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath
+#endregion
