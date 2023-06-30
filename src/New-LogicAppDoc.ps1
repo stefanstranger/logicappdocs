@@ -1,12 +1,12 @@
 [CmdLetBinding()]
 Param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$SubscriptionId,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$ResourceGroupName,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]$LogicAppName,
 
     [Parameter(Mandatory = $false)]
@@ -92,6 +92,74 @@ Function Get-Action {
         }
     }   
 }
+
+Function New-ActionOrder {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Actions
+    )
+
+    # Search for the action that has an empty RunAfter property
+    $firstAction = $Actions | Where-Object { [string]::IsNullOrEmpty($_.RunAfter) } |
+    Add-Member -MemberType NoteProperty -Name Order -Value 0 -PassThru
+    $currentAction = $firstAction
+
+    # Define a variable to hold the current order index
+    $indexNumber = 1
+
+    #Loop through all the actions 
+    for ($i = 0; $i -lt $Actions.Count; $i++) {
+        # Search for the action that has the first action's ActionName in the RunAfter property or the previous action's ActionName
+        if (![string]::IsNullOrEmpty($firstAction)) {
+            $Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName } | 
+            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber -PassThru
+            $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName })
+            # Set the firstAction variable to null
+            $firstAction = $null            
+            $indexNumber++ 
+        }
+        else {
+            # Search for actions that have the previous action's ActionName in the RunAfter property
+            # If there are multiple actions with the same RunAfter property, set the RunAfter property to the Parent property
+            if (($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | Measure-Object).count -gt 1) {
+                $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object { 
+                    $_.RunAfter = $_.Parent 
+                    # $_ |
+                    #     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber -PassThru
+                    # $currentActionName = ($Actions | Where-Object { $_.RunAfter -eq $currentActionName }).ActionName
+                    # # Increment the indexNumber
+                    # $indexNumber++
+                }
+                # Iterate first the condition status true actions.
+                $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName))}  |
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName))} 
+                # Increment the indexNumber
+                $indexNumber++
+            }
+            else {
+                # If there cannot any action found with the previous action's ActionName in the RunAfter property, search for the action has a parent with the false condition.
+                if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) }) {
+                    $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | 
+                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })
+                    # Increment the indexNumber
+                    $indexNumber++                    
+                }
+                else {
+                    $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0,($currentAction.Parent).length-5)))}  |
+                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0,($currentAction.Parent).length-5)))}
+                    # Increment the indexNumber
+                    $indexNumber++
+                }
+                
+            }                
+        }
+    }
+
+}
 #endregion
 
 #region Get Logic App Workflow code
@@ -106,6 +174,8 @@ $LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
 #endregion
 
 Get-Action -Actions $($LogicApp.properties.definition.actions) -OutVariable objects
+
+New-ActionOrder -Actions $objects
 
 # Create the Mermaid code
 $mermaidCode = "graph TB" + [Environment]::NewLine
@@ -133,8 +203,9 @@ foreach ($object in $objects) {
     if ($object | Get-Member -MemberType NoteProperty -Name 'RunAfter') {
         # Check if the runafter property is not empty
         if (![string]::IsNullOrEmpty($object.RunAfter)) {
-            $mermaidCode += "    $($object.RunAfter) --> $($object.ActionName)" + [Environment]::NewLine}
-        }        
+            $mermaidCode += "    $($object.RunAfter) --> $($object.ActionName)" + [Environment]::NewLine
+        }
+    }        
 }
 
 # Create link between trigger and first action
@@ -148,7 +219,7 @@ $InputObject = [pscustomobject]@{
         Name              = $LogicApp.name
         ResourceGroupName = $resourceGroupName
         Location          = $LogicApp.location
-        SubscriptionName  =  (Get-AzContext).Subscription.Name
+        SubscriptionName  = (Get-AzContext).Subscription.Name
 
     }
     'Actions'  = $objects
