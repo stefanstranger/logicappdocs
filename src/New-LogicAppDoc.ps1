@@ -58,6 +58,8 @@ Function Get-Action {
             $null
         }
 
+        $inputs = if ($action | Get-Member -MemberType Noteproperty -Name 'inputs') { $action.inputs } else { $null }
+
         $type = $action.type
 
         # new ChildActions code
@@ -70,6 +72,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
+            Inputs       = $inputs | Convertto-Json -Depth 10 -Compress
         }
 
         if ($action.type -eq 'If') {
@@ -125,16 +128,11 @@ Function New-ActionOrder {
             if (($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | Measure-Object).count -gt 1) {
                 $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object { 
                     $_.RunAfter = $_.Parent 
-                    # $_ |
-                    #     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber -PassThru
-                    # $currentActionName = ($Actions | Where-Object { $_.RunAfter -eq $currentActionName }).ActionName
-                    # # Increment the indexNumber
-                    # $indexNumber++
                 }
                 # Iterate first the condition status true actions.
-                $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName))}  |
-                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName))} 
+                $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }  |
+                Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
                 # Increment the indexNumber
                 $indexNumber++
             }
@@ -142,15 +140,15 @@ Function New-ActionOrder {
                 # If there cannot any action found with the previous action's ActionName in the RunAfter property, search for the action has a parent with the false condition.
                 if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) }) {
                     $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | 
-                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })
                     # Increment the indexNumber
                     $indexNumber++                    
                 }
                 else {
-                    $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0,($currentAction.Parent).length-5)))}  |
-                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0,($currentAction.Parent).length-5)))}
+                    $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
                     # Increment the indexNumber
                     $indexNumber++
                 }
@@ -158,7 +156,6 @@ Function New-ActionOrder {
             }                
         }
     }
-
 }
 #endregion
 
@@ -174,8 +171,6 @@ $LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
 #endregion
 
 Get-Action -Actions $($LogicApp.properties.definition.actions) -OutVariable objects
-
-New-ActionOrder -Actions $objects
 
 # Create the Mermaid code
 $mermaidCode = "graph TB" + [Environment]::NewLine
@@ -212,6 +207,8 @@ foreach ($object in $objects) {
 $firstAction = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
 $mermaidCode += "    Trigger --> $firstAction" + [Environment]::NewLine
 
+New-ActionOrder -Actions $objects
+
 #region Generate Markdown documentation for Logic App Workflow
 Write-Output -InputObject 'Logic App Workflow Markdown document is being created'
 $InputObject = [pscustomobject]@{
@@ -226,6 +223,7 @@ $InputObject = [pscustomobject]@{
     'Diagram'  = $mermaidCode
 
 }
+
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options

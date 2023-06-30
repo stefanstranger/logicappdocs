@@ -22,14 +22,9 @@ $($InputObject.diagram)
     Section 'Logic App Workflow Actions' {
         "This section shows an overview of Logic App Workflow actions and their dependencies."
 
-        Section 'Actions' {
-
-            $($InputObject.actions) | 
-            ForEach-Object { $_ |
-                Table -Property 'ActionName', 'Type', 'RunAfter', 'Parent', 'ChildActions'
-                # Added empty line between each table
-                "<!--- added empty line -->"
-            }                
+        Section 'Actions' {            
+            $($InputObject.actions) | Sort-Object -Property Order | 
+                Table -Property 'ActionName', 'Type', 'RunAfter', 'Inputs'
         }
     }
 }
