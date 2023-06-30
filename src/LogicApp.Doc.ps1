@@ -17,8 +17,6 @@ $($InputObject.diagram)
 "@       
 }
 
-
-
     Section 'Logic App Workflow Actions' {
         "This section shows an overview of Logic App Workflow actions and their dependencies."
 
