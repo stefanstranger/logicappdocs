@@ -57,7 +57,7 @@ Function Get-Action {
             # if Runafter is empty and has no parent use null.
             $null
         }
-
+        
         $inputs = if ($action | Get-Member -MemberType Noteproperty -Name 'inputs') { $action.inputs } else { $null }
 
         $type = $action.type
@@ -157,6 +157,16 @@ Function New-ActionOrder {
         }
     }
 }
+
+Function Format-MarkdownTableJson {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Json
+    )
+
+    (($Json -replace '^{', '<pre>{') -replace '}$', '}</pre>') -replace '\r\n', '<br>'
+}
 #endregion
 
 #region Get Logic App Workflow code
@@ -188,7 +198,6 @@ $objects | Group-Object -Property Parent | ForEach-Object {
             $mermaidCode += "        $childAction" + [Environment]::NewLine
         }
         $mermaidCode += "    end" + [Environment]::NewLine
-        #$mermaidCode += [Environment]::NewLine
     }
     else {}        
 }
