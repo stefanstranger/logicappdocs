@@ -58,7 +58,12 @@ Function Get-Action {
             $null
         }
         
-        $inputs = if ($action | Get-Member -MemberType Noteproperty -Name 'inputs') { $action.inputs } else { $null }
+        $inputs = if ($action | Get-Member -MemberType Noteproperty -Name 'inputs') { 
+            $($action.inputs)
+        } 
+        else { 
+            $null 
+        }
 
         $type = $action.type
 
@@ -72,7 +77,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Inputs       = $inputs | Convertto-Json -Depth 10 -Compress
+            Inputs       = Remove-Secrets -Inputs $($inputs | Convertto-Json -Depth 10 -Compress)
         }
 
         if ($action.type -eq 'If') {
@@ -95,6 +100,19 @@ Function Get-Action {
         }
     }   
 }
+
+Function Remove-Secrets {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Inputs
+    )
+
+    # Remove the secrets from the Logic App Inputs
+    $regexPattern = '(\"headers":\{"Authorization":"(Bearer|Basic) )[^"]*'
+    $Inputs -replace $regexPattern, '$1******'
+}
+
 
 Function New-ActionOrder {
     [CmdletBinding()]

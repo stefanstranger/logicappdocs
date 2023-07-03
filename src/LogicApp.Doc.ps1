@@ -9,7 +9,7 @@ Document 'Azure-LogicApp-Documentation' {
         )
     
         (($Json -replace '^{', '<pre>{') -replace '}$', '}</pre>') -replace '\r\n', '<br>'
-    }
+    }    
 
     "# Azure Logic App Documentation - $($InputObject.LogicApp.name)"
 
