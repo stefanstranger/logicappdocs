@@ -31,7 +31,7 @@ Go to the directory where you have saved the Markdown file (OutputPath) and open
 
 ## Example
 
-[Example of the generated Markdown file](./examplemarkdowndocument.png)
+![Example of the generated Markdown file](./examplemarkdowndocument.png)
 
 
 
