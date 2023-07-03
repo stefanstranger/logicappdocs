@@ -1,6 +1,6 @@
 # Introduction
 
-This is a script to generate technical documentation for Azure Logic Apps. It uses PowerShell to retrieve the Logic App Workflow code and to create a Markdown file with the workflow in a Mermaid Diagram and a table of the actions used in the workflow.
+This is a script to generate technical documentation for Azure Logic Apps. It uses PowerShell to retrieve the Logic App Workflow code and creates a Markdown file with the workflow in a Mermaid Diagram and a table of the actions used in the workflow.
 
 ## Getting Started
 
@@ -27,7 +27,11 @@ Login-AzAccount -SubscriptionId <SubscriptionId>
 
 You can open the Markdown file in Visual Studio Code or any other Markdown editor.
 
-Go to the directory where you have saved the Markdown file (OutputPath) and open the file calle Azure-LogicApp-Documentation.md.
+Go to the directory where you have saved the Markdown file (OutputPath) and open the file called Azure-LogicApp-Documentation.md.
+
+## Example
+
+[Example of the generated Markdown file](./examplemarkdowndocument.png)
 
 
 
