@@ -263,9 +263,7 @@ $Objects = Get-Action -Actions $($LogicApp.properties.definition.actions)
 
 if ($VerbosePreference -eq 'Continue') {
     Write-Verbose -Message ('Found {0} actions in Logic App' -f $Objects.Count)
-    $objects | ForEach-Object {
-        Write-Verbose -Message ('ActionName: {0} - Parent: {1} - RunAfter: {2}' -f $_.ActionName, $_.Parent, $_.RunAfter)
-    }
+    Write-Verbose ($objects | Format-Table | out-string)
 }
 
 # Create the Mermaid code
