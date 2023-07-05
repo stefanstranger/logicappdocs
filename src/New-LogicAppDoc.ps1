@@ -14,6 +14,22 @@ Param(
 )
 
 Set-StrictMode -Version 3.0
+$ErrorActionPreference = 'Stop'
+$WarningPreference = 'SilentlyContinue'
+
+
+@"
+╭──────────────────────╮
+│    logicappdocs      │
+╰──────────────────────╯
+
+Author: Stefan Stranger
+Github: https://github.com/stefanstranger/logicappdocs
+Version: 1.0
+
+"@.foreach({
+    Write-Host $_ -ForegroundColor Yellow
+})
 
 #region Import PowerShell Modules. Add more modules if needed
 if (Get-Module -ListAvailable -Name PSDocs) {
@@ -113,7 +129,6 @@ Function Remove-Secrets {
     $Inputs -replace $regexPattern, '$1******'
 }
 
-
 Function New-ActionOrder {
     [CmdletBinding()]
     Param(
@@ -134,7 +149,7 @@ Function New-ActionOrder {
         # Search for the action that has the first action's ActionName in the RunAfter property or the previous action's ActionName
         if (![string]::IsNullOrEmpty($firstAction)) {
             $Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName } | 
-            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber -PassThru
+            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
             $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName })
             # Set the firstAction variable to null
             $firstAction = $null            
@@ -169,8 +184,7 @@ Function New-ActionOrder {
                     $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
                     # Increment the indexNumber
                     $indexNumber++
-                }
-                
+                }                
             }                
         }
     }
@@ -185,9 +199,56 @@ Function Format-MarkdownTableJson {
 
     (($Json -replace '^{', '<pre>{') -replace '}$', '}</pre>') -replace '\r\n', '<br>'
 }
+
+# From PowerShell module AzViz. (https://raw.githubusercontent.com/PrateekKumarSingh/AzViz/master/AzViz/src/private/Test-AzLogin.ps1)
+Function Test-AzLogin {
+    [CmdletBinding()]
+    [OutputType([boolean])]
+    [Alias()]
+    Param()
+
+    Begin {
+    }
+    Process {
+        # Verify we are signed into an Azure account
+        try {
+            try{
+                Import-Module Az.Accounts -Verbose:$false   
+            }
+            catch {}
+            Write-Verbose 'Testing Azure login'
+            $isLoggedIn = [bool](Get-AzContext -ErrorAction Stop)
+            if(!$isLoggedIn){                
+                Write-Verbose 'Not logged into Azure. Initiate login now.'
+                Write-Host 'Enter your credentials in the pop-up window' -ForegroundColor Yellow
+                $isLoggedIn = Connect-AzAccount
+            }
+        }
+        catch [System.Management.Automation.PSInvalidOperationException] {
+            Write-Verbose 'Not logged into Azure. Initiate login now.'
+            Write-Host 'Enter your credentials in the pop-up window' -ForegroundColor Yellow
+            $isLoggedIn = Connect-AzAccount
+        }
+        catch {
+            Throw $_.Exception.Message
+        }
+        [bool]$isLoggedIn
+    }
+    End {
+        
+    }
+}
 #endregion
 
 #region Get Logic App Workflow code
+
+# Test if the user is logged in
+if (!(Test-AzLogin)) {
+    break
+}
+
+Write-Host ('Getting Logic App Workflow code for Logic App "{0}" in Resource Group "{1}" and Subscription "{2}"' -f $LogicAppName, $ResourceGroupName, $(Get-AzContext).Subscription.Name) -ForegroundColor Green
+
 $accessToken = Get-AzAccessToken -ResourceUrl 'https://management.core.windows.net/'
 $headers = @{
     'authorization' = "Bearer $($AccessToken.token)"
@@ -198,9 +259,11 @@ $uri = "https://management.azure.com/subscriptions/$($subscriptionId)/resourceGr
 $LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
 #endregion
 
-Get-Action -Actions $($LogicApp.properties.definition.actions) -OutVariable objects
+$Objects = Get-Action -Actions $($LogicApp.properties.definition.actions)
 
 # Create the Mermaid code
+Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
+
 $mermaidCode = "graph TB" + [Environment]::NewLine
 $mermaidCode += "    Trigger" + [Environment]::NewLine
 
@@ -231,13 +294,12 @@ foreach ($object in $objects) {
 }
 
 # Create link between trigger and first action
-$firstAction = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
-$mermaidCode += "    Trigger --> $firstAction" + [Environment]::NewLine
+$firstActionLink = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
+$mermaidCode += "    Trigger --> $firstActionLink" + [Environment]::NewLine
 
 New-ActionOrder -Actions $objects
 
 #region Generate Markdown documentation for Logic App Workflow
-Write-Output -InputObject 'Logic App Workflow Markdown document is being created'
 $InputObject = [pscustomobject]@{
     'LogicApp' = [PSCustomObject]@{
         Name              = $LogicApp.name
@@ -254,5 +316,6 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath
+$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath
+Write-Host ('Logic App Workflow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
