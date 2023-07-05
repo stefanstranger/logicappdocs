@@ -28,8 +28,8 @@ Github: https://github.com/stefanstranger/logicappdocs
 Version: 1.0
 
 "@.foreach({
-    Write-Host $_ -ForegroundColor Magenta
-})
+        Write-Host $_ -ForegroundColor Magenta
+    })
 
 #region Import PowerShell Modules. Add more modules if needed
 if (Get-Module -ListAvailable -Name PSDocs) {
@@ -146,6 +146,7 @@ Function New-ActionOrder {
 
     #Loop through all the actions 
     for ($i = 0; $i -lt $Actions.Count; $i++) {
+        Write-host -Object "Processing currentaction $($currentAction.ActionName)" -ForegroundColor Yellow
         # Search for the action that has the first action's ActionName in the RunAfter property or the previous action's ActionName
         if (![string]::IsNullOrEmpty($firstAction)) {
             $Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName } | 
@@ -160,20 +161,24 @@ Function New-ActionOrder {
             # If there are multiple actions with the same RunAfter property, set the RunAfter property to the Parent property
             if (($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | Measure-Object).count -gt 1) {
                 $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object { 
+                    Write-Verbose -Message ('Setting RunAfter property {0} to Parent property value {1} for action {2}' -f $_.RunAfter, $_.Parent, $_.ActionName)
                     $_.RunAfter = $_.Parent 
                 }
                 # Iterate first the condition status true actions.
-                $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }  |
-                Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
-                # Increment the indexNumber
-                $indexNumber++
+                if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }) {
+                    $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }  |
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
+                    # Increment the indexNumber
+                    $indexNumber++
+                }                
             }
             else {
                 # If there cannot any action found with the previous action's ActionName in the RunAfter property, search for the action has a parent with the false condition.
                 if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) }) {
                     $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | 
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    # CurrentAction will be empty if the ??
                     $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })
                     # Increment the indexNumber
                     $indexNumber++                    
@@ -212,13 +217,13 @@ Function Test-AzLogin {
     Process {
         # Verify we are signed into an Azure account
         try {
-            try{
+            try {
                 Import-Module Az.Accounts -Verbose:$false   
             }
             catch {}
             Write-Verbose 'Testing Azure login'
             $isLoggedIn = [bool](Get-AzContext -ErrorAction Stop)
-            if(!$isLoggedIn){                
+            if (!$isLoggedIn) {                
                 Write-Verbose 'Not logged into Azure. Initiate login now.'
                 Write-Host 'Enter your credentials in the pop-up window' -ForegroundColor Yellow
                 $isLoggedIn = Connect-AzAccount
@@ -303,6 +308,11 @@ $firstActionLink = ($objects | Where-Object { $_.Runafter -eq $null }).ActionNam
 $mermaidCode += "    Trigger --> $firstActionLink" + [Environment]::NewLine
 
 New-ActionOrder -Actions $objects
+
+if ($VerbosePreference -eq 'Continue') {
+    Write-Verbose -Message ('Found {0} actions in Logic App' -f $Objects.Count)
+    Write-Verbose ($objects | Select-Object -Property ActionName, RunAfter, Type, Parent, Order | Sort-Object -Property Order | Format-Table | Out-String)
+}
 
 #region Generate Markdown documentation for Logic App Workflow
 $InputObject = [pscustomobject]@{
