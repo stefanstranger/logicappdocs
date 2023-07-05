@@ -28,7 +28,7 @@ Github: https://github.com/stefanstranger/logicappdocs
 Version: 1.0
 
 "@.foreach({
-    Write-Host $_ -ForegroundColor Yellow
+    Write-Host $_ -ForegroundColor Magenta
 })
 
 #region Import PowerShell Modules. Add more modules if needed
@@ -261,6 +261,13 @@ $LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
 
 $Objects = Get-Action -Actions $($LogicApp.properties.definition.actions)
 
+if ($VerbosePreference -eq 'Continue') {
+    Write-Verbose -Message ('Found {0} actions in Logic App' -f $Objects.Count)
+    $objects | ForEach-Object {
+        Write-Verbose -Message ('ActionName: {0} - Parent: {1} - RunAfter: {2}' -f $_.ActionName, $_.Parent, $_.RunAfter)
+    }
+}
+
 # Create the Mermaid code
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
 
@@ -312,7 +319,6 @@ $InputObject = [pscustomobject]@{
     'Diagram'  = $mermaidCode
 
 }
-
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
