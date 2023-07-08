@@ -145,8 +145,8 @@ Function New-ActionOrder {
     $indexNumber = 1
 
     #Loop through all the actions 
-    for ($i = 0; $i -lt $Actions.Count; $i++) {
-        Write-host -Object "Processing currentaction $($currentAction.ActionName)" -ForegroundColor Yellow
+    for ($i = 1; $i -lt $Actions.Count; $i++) {
+        Write-Verbose -Message ('Processing currentaction {0}' -f $($currentAction.ActionName))
         # Search for the action that has the first action's ActionName in the RunAfter property or the previous action's ActionName
         if (![string]::IsNullOrEmpty($firstAction)) {
             $Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName } | 
@@ -160,9 +160,12 @@ Function New-ActionOrder {
             # Search for actions that have the previous action's ActionName in the RunAfter property
             # If there are multiple actions with the same RunAfter property, set the RunAfter property to the Parent property
             if (($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | Measure-Object).count -gt 1) {
-                $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object { 
-                    Write-Verbose -Message ('Setting RunAfter property {0} to Parent property value {1} for action {2}' -f $_.RunAfter, $_.Parent, $_.ActionName)
-                    $_.RunAfter = $_.Parent 
+                $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object {                     
+                    # Check if the action has a Parent Value
+                    if (![string]::IsNullOrEmpty($_.Parent)) {
+                        Write-Verbose -Message ('Setting RunAfter property {0} to Parent property value {1} for action {2}' -f $_.RunAfter, $_.Parent, $_.ActionName)
+                        $_.RunAfter = $_.Parent
+                    }
                 }
                 # Iterate first the condition status true actions.
                 if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }) {
@@ -171,7 +174,17 @@ Function New-ActionOrder {
                     $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
                     # Increment the indexNumber
                     $indexNumber++
-                }                
+                }   
+                else {
+                    # Add Order property to the action that it's RunAfter property updated from the Parent property.
+                    # This is the first action in a foreach loop.
+                    # After this action the rest of rest of the foreach actions need to be processed.
+                    $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } |
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) }
+                    # Increment the indexNumber
+                    $indexNumber++
+                }             
             }
             else {
                 # If there cannot any action found with the previous action's ActionName in the RunAfter property, search for the action has a parent with the false condition.
@@ -183,15 +196,27 @@ Function New-ActionOrder {
                     # Increment the indexNumber
                     $indexNumber++                    
                 }
-                else {
+                elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } )  {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
                     # Increment the indexNumber
                     $indexNumber++
-                }                
+                }
+                else {
+                    # If there cannot any action found with the previous action's ActionName in the RunAfter property, search for the action has a parent with the same name as the currents action's runasfter property.
+                    if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.Parent) -and !($_ | Get-Member -MemberType NoteProperty 'Order') }) {
+                        $Actions | Where-Object { $_.RunAfter -eq $($currentAction.Parent) -and !($_ | Get-Member -MemberType NoteProperty 'Order') } | 
+                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                        # CurrentAction will be empty if the ??
+                        $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                        # Increment the indexNumber
+                        $indexNumber++                    
+                    }
+                }                         
             }                
         }
+        Write-Verbose -Message ('Current action {0} with Order Id {1}' -f $($currentAction.ActionName), $($currentAction.Order) )
     }
 }
 
