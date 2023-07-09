@@ -117,6 +117,23 @@ Function Get-Action {
     }   
 }
 
+Function Get-Connection {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Connection
+    )
+
+    foreach ($key in $Connection.PSObject.Properties) {
+        [PSCustomObject]@{
+            Name                 = $key.name
+            ConnectionId         = $key.Value.connectionId
+            ConnectionName       = $key.Value.connectionName
+            ConnectionProperties = if ($key.Value | Get-Member -MemberType NoteProperty connectionProperties) { $key.Value.connectionProperties } else { $null }
+            id                   = $key.Value.id
+        } 
+    }
+}
 Function Remove-Secrets {
     [CmdletBinding()]
     Param(
@@ -129,7 +146,7 @@ Function Remove-Secrets {
     $Inputs -replace $regexPattern, '$1******'
 }
 
-Function New-ActionOrder {
+Function Sort-Action {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]
@@ -196,7 +213,7 @@ Function New-ActionOrder {
                     # Increment the indexNumber
                     $indexNumber++                    
                 }
-                elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } )  {
+                elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } ) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
@@ -296,6 +313,9 @@ if ($VerbosePreference -eq 'Continue') {
     Write-Verbose ($objects | Format-Table | out-string)
 }
 
+# Get Logic App Connections
+$Connections = Get-Connection -Connection $($LogicApp.properties.parameters.'$connections'.value)
+
 # Create the Mermaid code
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
 
@@ -332,7 +352,7 @@ foreach ($object in $objects) {
 $firstActionLink = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
 $mermaidCode += "    Trigger --> $firstActionLink" + [Environment]::NewLine
 
-New-ActionOrder -Actions $objects
+Sort-Action -Actions $objects
 
 if ($VerbosePreference -eq 'Continue') {
     Write-Verbose -Message ('Found {0} actions in Logic App' -f $Objects.Count)
@@ -349,8 +369,8 @@ $InputObject = [pscustomobject]@{
 
     }
     'Actions'  = $objects
+    'Connections' = $Connections
     'Diagram'  = $mermaidCode
-
 }
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };

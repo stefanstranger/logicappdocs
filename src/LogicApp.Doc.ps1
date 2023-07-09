@@ -19,23 +19,34 @@ Document 'Azure-LogicApp-Documentation' {
 
         "Date: $(Get-Date -Format 'yyyy-MM-dd')"
     }
-
-    Section 'Logic App Workflow Actions'{
-@"        
+   
+    Section 'Logic App Workflow Diagram' {
+        @"        
 ```````mermaid
 $($InputObject.diagram)
 ```````
 "@       
-}
-
-    Section 'Logic App Workflow Actions' {
+    }
+    
+        Section 'Logic App Workflow Actions' {
         "This section shows an overview of Logic App Workflow actions and their dependencies."
 
         Section 'Actions' {            
             $($InputObject.actions) |                 
             Sort-Object -Property Order |  
-                Select-Object -Property 'ActionName', 'Type', 'RunAfter', @{Name='Inputs';Expression={Format-MarkdownTableJson -Json $($_.Inputs | ConvertFrom-Json | ConvertTo-Json)  }} |
-                Table -Property 'ActionName', 'Type', 'RunAfter', 'Inputs'
+            Select-Object -Property 'ActionName', 'Type', 'RunAfter', @{Name = 'Inputs'; Expression = { Format-MarkdownTableJson -Json $($_.Inputs | ConvertFrom-Json | ConvertTo-Json) } } |
+            Table -Property 'ActionName', 'Type', 'RunAfter', 'Inputs'
         }
     }
+
+    Section 'Logic App Connections' {
+        "This section shows an overview of Logic App Workflow connections."
+
+        Section 'Connections' {
+            $($InputObject.Connections) |
+            Select-Object -Property 'ConnectionName', 'ConnectionId', @{Name = 'ConnectionProperties'; Expression = { Format-MarkdownTableJson -Json $($_.ConnectionProperties | ConvertTo-Json) } } |
+            Table -Property 'ConnectionName', 'ConnectionId', 'ConnectionProperties'
+        }
+    }
+
 }
