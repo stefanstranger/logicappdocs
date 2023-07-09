@@ -16,8 +16,8 @@ Document 'Azure-LogicApp-Documentation' {
     Section 'Introduction' {
         "This document describes the Azure Logic App Workflow **$($InputObject.LogicApp.name)** in the **$($InputObject.LogicApp.ResourceGroupName)** resource group in the **$($InputObject.LogicApp.SubscriptionName)** subscription."
         "This document is programmatically generated using a PowerShell script."
-
-        "Date: $(Get-Date -Format 'yyyy-MM-dd')"
+        
+        "Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     }
    
     Section 'Logic App Workflow Diagram' {
