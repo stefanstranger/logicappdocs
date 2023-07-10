@@ -33,5 +33,15 @@ Go to the directory where you have saved the Markdown file (OutputPath) and open
 
 ![Example of the generated Markdown file](./examplemarkdowndocument.png)
 
+## Thanks and shoutouts
+
+Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarSingh) for his [Azure Visualizer tool](https://github.com/PrateekKumarSingh/AzViz). I used some of his code and inspiration to develop the LogicAppDocs script.
+
+[Rick Strahl](https://twitter.com/rickstrahl) with some Markdown tips and tricks and for creating the owesume [Markdown Monster](https://store.west-wind.com/product/markdown_monster_3) Editor, Viewer and Weblog Publisher for Windows.
+
+And finally some great #PowerShell community members for their feedback and suggestions on Twitter!
+
+
+
 
 
