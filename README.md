@@ -39,7 +39,7 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 [Rick Strahl](https://twitter.com/rickstrahl) with some Markdown tips and tricks and for creating the awesome [Markdown Monster](https://store.west-wind.com/product/markdown_monster_3) Editor, Viewer and Weblog Publisher for Windows.
 
-And finally some great #PowerShell community members for their feedback and suggestions on Twitter!
+And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
 
 
