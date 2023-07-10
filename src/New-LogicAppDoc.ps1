@@ -4,8 +4,7 @@ Param(
         ParameterSetName = 'Azure')]
     [string]$SubscriptionId,
 
-    [Parameter(Mandatory = $true,
-        ParameterSetName = 'Azure')]
+    [Parameter(Mandatory = $true)]
     [string]$ResourceGroupName,
 
     [Parameter(Mandatory = $true,
