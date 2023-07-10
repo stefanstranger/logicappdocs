@@ -1,0 +1,645 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "For Each - SHA": {
+                "actions": {
+                    "Condition_-_Status": {
+                        "actions": {
+                            "Compose - Current Item": {
+                                "inputs": "@items('For Each - SHA')",
+                                "runAfter": {
+                                    "Compose - SHA TimeGeneratedUTC": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "Compose"
+                            },
+                            "Compose - SHA TimeGeneratedUTC": {
+                                "inputs": "@items('For Each - SHA')?['TimeGeneratedUTC']",
+                                "runAfter": {},
+                                "type": "Compose"
+                            },
+                            "Compose - Subscriptions Array": {
+                                "inputs": "@array(items('For Each - SHA').Subscriptions)",
+                                "runAfter": {
+                                    "Compose - Current Item": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "Compose"
+                            },
+                            "Create_a_new_issue_(V2)": {
+                                "inputs": {
+                                    "body": {
+                                        "fields": {
+                                            "customfield_10041": "Azure",
+                                            "customfield_10065": "@items('For Each - SHA')?['JIRA_ASSIGNMENT_GROUP']",
+                                            "description": "Azure Service Health Issue\n\nStatus: @{items('For Each - SHA')?['Status']} \nStart Time: @{items('For Each - SHA')?['TimeGeneratedUTC']}\nSummary of Impact: @{body('Html to text - Summary Communication')}\nTracking ID: @{items('For Each - SHA')?['TICKET_ID_Number']}\nImpacted Services: @{items('For Each - SHA')?['AZURE_SERVICE']}\nImpacted Subscriptions: @{items('For Each - SHA')?['Subscriptions']}",
+                                            "summary": "@{items('For Each - SHA')?['SUMMARY_Title']} - @{items('For Each - SHA')?['TICKET_ID_Number']}"
+                                        }
+                                    },
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['jira']['connectionId']"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "path": "/v2/issue",
+                                    "queries": {
+                                        "issueTypeIds": "10005",
+                                        "projectKey": "IP"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Html to text - Summary Communication": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "ApiConnection"
+                            },
+                            "Html to text - Summary Communication": {
+                                "inputs": {
+                                    "body": "<p>@{items('For Each - SHA')?['SUMMARY_Communication']}</p>",
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['conversionservice']['connectionId']"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "path": "/html2text"
+                                },
+                                "runAfter": {
+                                    "Compose - Subscriptions Array": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "ApiConnection"
+                            }
+                        },
+                        "else": {
+                            "actions": {
+                                "Compose_-_Resolved_-_Current_Item": {
+                                    "inputs": "@items('For Each - SHA')",
+                                    "runAfter": {},
+                                    "type": "Compose"
+                                },
+                                "For_Each_-_JIRA_SHA_Incident": {
+                                    "actions": {
+                                        "Compose_-_Current_JIRA_SHA_Incident": {
+                                            "inputs": "@items('For_Each_-_JIRA_SHA_Incident')",
+                                            "runAfter": {},
+                                            "type": "Compose"
+                                        },
+                                        "Compose_-_JIRA_Incident_Id": {
+                                            "inputs": "@items('For_Each_-_JIRA_SHA_Incident')['id']",
+                                            "runAfter": {
+                                                "Compose_-_TICKET_ID_Number": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Compose"
+                                        },
+                                        "Compose_-_TICKET_ID_Number": {
+                                            "inputs": "@items('For Each - SHA')?['TICKET_ID_Number']",
+                                            "runAfter": {
+                                                "Compose_-_Current_JIRA_SHA_Incident": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Compose"
+                                        },
+                                        "Condition": {
+                                            "actions": {
+                                                "HTTP_-_Close_JIRA_SHA_Incident": {
+                                                    "inputs": {
+                                                        "body": {
+                                                            "transition": {
+                                                                "id": "111"
+                                                            },
+                                                            "update": {
+                                                                "comment": [
+                                                                    {
+                                                                        "add": {
+                                                                            "body": {
+                                                                                "content": [
+                                                                                    {
+                                                                                        "content": [
+                                                                                            {
+                                                                                                "text": "Azure Service Health Alert Incident automatically resolved via Log Analytics Workflow",
+                                                                                                "type": "text"
+                                                                                            }
+                                                                                        ],
+                                                                                        "type": "paragraph"
+                                                                                    }
+                                                                                ],
+                                                                                "type": "doc",
+                                                                                "version": 1
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "headers": {
+                                                            "Authorization": "Basic *******"
+                                                        },
+                                                        "method": "POST",
+                                                        "uri": "https://contoso.atlassian.net/rest/api/3/issue/@{outputs('Compose_-_JIRA_Incident_Id')}/transitions"
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Http"
+                                                }
+                                            },
+                                            "expression": {
+                                                "and": [
+                                                    {
+                                                        "contains": [
+                                                            "@outputs('Compose_-_Current_JIRA_SHA_Incident')['fields']['summary']",
+                                                            "@items('For Each - SHA')['TICKET_ID_Number']"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "runAfter": {
+                                                "Compose_-_JIRA_Incident_Id": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "If"
+                                        }
+                                    },
+                                    "foreach": "@body('Parse_JSON_-_HTTP_-_Get_all_Active_JIRA_SHA_Incidents')?['issues']",
+                                    "runAfter": {
+                                        "Parse_JSON_-_HTTP_-_Get_all_Active_JIRA_SHA_Incidents": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Foreach"
+                                },
+                                "HTTP_-_Get_all_Active_JIRA_SHA_Incidents": {
+                                    "inputs": {
+                                        "headers": {
+                                            "Authorization": "Basic ******"
+                                        },
+                                        "method": "GET",
+                                        "uri": "https://contoso.atlassian.net/rest/api/3/search?jql=Status!=Completed%20and%20cf[10041]~\"Azure\"&fields=key,summary,status,resolution,customfield_10041,description"
+                                    },
+                                    "runAfter": {
+                                        "Compose_-_Resolved_-_Current_Item": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Http"
+                                },
+                                "Parse_JSON_-_HTTP_-_Get_all_Active_JIRA_SHA_Incidents": {
+                                    "inputs": {
+                                        "content": "@body('HTTP_-_Get_all_Active_JIRA_SHA_Incidents')",
+                                        "schema": {
+                                            "properties": {
+                                                "expand": {
+                                                    "type": "string"
+                                                },
+                                                "issues": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "expand": {
+                                                                "type": "string"
+                                                            },
+                                                            "fields": {
+                                                                "properties": {
+                                                                    "customfield_10041": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "description": {
+                                                                        "properties": {
+                                                                            "content": {
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "content": {
+                                                                                            "items": {
+                                                                                                "properties": {
+                                                                                                    "text": {
+                                                                                                        "type": "string"
+                                                                                                    },
+                                                                                                    "type": {
+                                                                                                        "type": "string"
+                                                                                                    }
+                                                                                                },
+                                                                                                "required": [
+                                                                                                    "type"
+                                                                                                ],
+                                                                                                "type": "object"
+                                                                                            },
+                                                                                            "type": "array"
+                                                                                        },
+                                                                                        "type": {
+                                                                                            "type": "string"
+                                                                                        }
+                                                                                    },
+                                                                                    "required": [
+                                                                                        "type",
+                                                                                        "content"
+                                                                                    ],
+                                                                                    "type": "object"
+                                                                                },
+                                                                                "type": "array"
+                                                                            },
+                                                                            "type": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "version": {
+                                                                                "type": "integer"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "resolution": {},
+                                                                    "status": {
+                                                                        "properties": {
+                                                                            "description": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "iconUrl": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "self": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "statusCategory": {
+                                                                                "properties": {
+                                                                                    "colorName": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "id": {
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "key": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "self": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "summary": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "key": {
+                                                                "type": "string"
+                                                            },
+                                                            "self": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "expand",
+                                                            "id",
+                                                            "self",
+                                                            "key",
+                                                            "fields"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "maxResults": {
+                                                    "type": "integer"
+                                                },
+                                                "startAt": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "HTTP_-_Get_all_Active_JIRA_SHA_Incidents": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ParseJson"
+                                }
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@items('For Each - SHA')?['Status']",
+                                        "Active"
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {},
+                        "type": "If"
+                    }
+                },
+                "foreach": "@body('Parse JSON - Log Analytics Search Query')?['value']",
+                "runAfter": {
+                    "Parse JSON - Log Analytics Search Query": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Parse JSON - Log Analytics Search Query": {
+                "inputs": {
+                    "content": "@body('Run_query_and_list_results')",
+                    "schema": {
+                        "properties": {
+                            "AZURE_SERVICE": {
+                                "type": "string"
+                            },
+                            "IMPACT": {
+                                "type": "string"
+                            },
+                            "JIRA_ASSIGNMENT_GROUP": {
+                                "type": "string"
+                            },
+                            "JIRA_COMPONENT_NAME": {
+                                "type": "string"
+                            },
+                            "SUMMARY_Communication": {
+                                "type": "string"
+                            },
+                            "SUMMARY_Title": {
+                                "type": "string"
+                            },
+                            "Status": {
+                                "type": "string"
+                            },
+                            "Subscriptions": {
+                                "type": "string"
+                            },
+                            "TICKET_ID_Number": {
+                                "type": "string"
+                            },
+                            "TimeGenerated": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Run_query_and_list_results": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@triggerBody()",
+                    "schema": {
+                        "properties": {
+                            "data": {
+                                "properties": {
+                                    "alertContext": {
+                                        "properties": {
+                                            "condition": {
+                                                "properties": {
+                                                    "allOf": {
+                                                        "items": {
+                                                            "properties": {
+                                                                "dimensions": {
+                                                                    "type": "array"
+                                                                },
+                                                                "failingPeriods": {
+                                                                    "properties": {
+                                                                        "minFailingPeriodsToAlert": {
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "numberOfEvaluationPeriods": {
+                                                                            "type": "integer"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                },
+                                                                "linkToFilteredSearchResultsAPI": {
+                                                                    "type": "string"
+                                                                },
+                                                                "linkToFilteredSearchResultsUI": {
+                                                                    "type": "string"
+                                                                },
+                                                                "linkToSearchResultsAPI": {
+                                                                    "type": "string"
+                                                                },
+                                                                "linkToSearchResultsUI": {
+                                                                    "type": "string"
+                                                                },
+                                                                "metricMeasureColumn": {},
+                                                                "metricValue": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "operator": {
+                                                                    "type": "string"
+                                                                },
+                                                                "searchQuery": {
+                                                                    "type": "string"
+                                                                },
+                                                                "targetResourceTypes": {
+                                                                    "type": "string"
+                                                                },
+                                                                "threshold": {
+                                                                    "type": "string"
+                                                                },
+                                                                "timeAggregation": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "searchQuery",
+                                                                "metricMeasureColumn",
+                                                                "targetResourceTypes",
+                                                                "operator",
+                                                                "threshold",
+                                                                "timeAggregation",
+                                                                "dimensions",
+                                                                "metricValue",
+                                                                "failingPeriods",
+                                                                "linkToSearchResultsUI",
+                                                                "linkToFilteredSearchResultsUI",
+                                                                "linkToSearchResultsAPI",
+                                                                "linkToFilteredSearchResultsAPI"
+                                                            ],
+                                                            "type": "object"
+                                                        },
+                                                        "type": "array"
+                                                    },
+                                                    "windowEndTime": {
+                                                        "type": "string"
+                                                    },
+                                                    "windowSize": {
+                                                        "type": "string"
+                                                    },
+                                                    "windowStartTime": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "conditionType": {
+                                                "type": "string"
+                                            },
+                                            "properties": {
+                                                "properties": {},
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "customProperties": {},
+                                    "essentials": {
+                                        "properties": {
+                                            "alertContextVersion": {
+                                                "type": "string"
+                                            },
+                                            "alertId": {
+                                                "type": "string"
+                                            },
+                                            "alertRule": {
+                                                "type": "string"
+                                            },
+                                            "alertTargetIDs": {
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "configurationItems": {
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "description": {
+                                                "type": "string"
+                                            },
+                                            "essentialsVersion": {
+                                                "type": "string"
+                                            },
+                                            "firedDateTime": {
+                                                "type": "string"
+                                            },
+                                            "monitorCondition": {
+                                                "type": "string"
+                                            },
+                                            "monitoringService": {
+                                                "type": "string"
+                                            },
+                                            "originAlertId": {
+                                                "type": "string"
+                                            },
+                                            "severity": {
+                                                "type": "string"
+                                            },
+                                            "signalType": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "schemaId": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {},
+                "type": "ParseJson"
+            },
+            "Run_query_and_list_results": {
+                "inputs": {
+                    "body": "@{body('Parse_JSON')['data']['alertContext']['Condition']['allOf'][0]['searchQuery']}",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/queryData",
+                    "queries": {
+                        "resourcegroups": "la-demo-rg",
+                        "resourcename": "la-demo-workspace",
+                        "resourcetype": "Log Analytics Workspace",
+                        "subscriptions": "fbca04ea-152b-415f-82a4-ae1ffc5f4267",
+                        "timerange": "Last hour"
+                    }
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {}
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azuremonitorlogs": {
+                    "connectionId": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/resourceGroups/jiraintegration-demo-rg/providers/Microsoft.Web/connections/azuremonitorlogs",
+                    "connectionName": "azuremonitorlogs",
+                    "id": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/providers/Microsoft.Web/locations/westeurope/managedApis/azuremonitorlogs"
+                },
+                "conversionservice": {
+                    "connectionId": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/resourceGroups/jiraintegration-demo-rg/providers/Microsoft.Web/connections/conversionservice",
+                    "connectionName": "conversionservice",
+                    "id": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/providers/Microsoft.Web/locations/westeurope/managedApis/conversionservice"
+                },
+                "jira": {
+                    "connectionId": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/resourceGroups/jiraintegration-demo-rg/providers/Microsoft.Web/connections/jira-3",
+                    "connectionName": "jira-3",
+                    "id": "/subscriptions/fbca04ea-152b-415f-82a4-ae1ffc5f4267/providers/Microsoft.Web/locations/westeurope/managedApis/jira"
+                }
+            }
+        }
+    }
+}

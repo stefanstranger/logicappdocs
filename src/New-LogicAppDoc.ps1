@@ -1,10 +1,24 @@
-[CmdLetBinding()]
+[CmdletBinding(DefaultParameterSetName = 'Azure')]
 Param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true,
+        ParameterSetName = 'Azure')]
     [string]$SubscriptionId,
 
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true,
+        ParameterSetName = 'Azure')]
     [string]$ResourceGroupName,
+
+    [Parameter(Mandatory = $true,
+        ParameterSetName = 'Local')]
+    [string]$SubscriptionName,
+
+    [Parameter(Mandatory = $true,
+        ParameterSetName = 'Local')]
+    [string]$Location,
+
+    [Parameter(Mandatory = $true,
+        ParameterSetName = 'Local')]
+    [string]$FilePath,
 
     [Parameter(Mandatory = $true)]
     [string]$LogicAppName,
@@ -288,33 +302,48 @@ Function Test-AzLogin {
 #endregion
 
 #region Get Logic App Workflow code
+if (!($FilePath)) {
 
-# Test if the user is logged in
-if (!(Test-AzLogin)) {
-    break
+    # Test if the user is logged in
+    if (!(Test-AzLogin)) {
+        break
+    }
+
+    $SubscriptionName = (Get-AzContext).Subscription.Name    
+
+    Write-Host ('Getting Logic App Workflow code for Logic App "{0}" in Resource Group "{1}" and Subscription "{2}"' -f $LogicAppName, $ResourceGroupName, $(Get-AzContext).Subscription.Name) -ForegroundColor Green
+
+    $accessToken = Get-AzAccessToken -ResourceUrl 'https://management.core.windows.net/'
+    $headers = @{
+        'authorization' = "Bearer $($AccessToken.token)"
+    }
+
+    $apiVersion = "2016-06-01"
+    $uri = "https://management.azure.com/subscriptions/$($subscriptionId)/resourceGroups/$($resourceGroupName)/providers/Microsoft.Logic/workflows/$($logicAppName)?api-version=$($apiVersion)"
+    $LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
+    #endregion
+
+    $Location = $LogicApp.location
+
+    $Objects = Get-Action -Actions $($LogicApp.properties.definition.actions)
+
+    # Get Logic App Connections
+    $Connections = Get-Connection -Connection $($LogicApp.properties.parameters.'$connections'.value)
 }
+else {
+    Write-Output -InputObject ('Using Logic App Workflow code from file "{0}"' -f $FilePath)
+    $LogicApp = Get-Content -Path $FilePath | ConvertFrom-Json
 
-Write-Host ('Getting Logic App Workflow code for Logic App "{0}" in Resource Group "{1}" and Subscription "{2}"' -f $LogicAppName, $ResourceGroupName, $(Get-AzContext).Subscription.Name) -ForegroundColor Green
+    $Objects = Get-Action -Actions $($LogicApp.definition.actions)
 
-$accessToken = Get-AzAccessToken -ResourceUrl 'https://management.core.windows.net/'
-$headers = @{
-    'authorization' = "Bearer $($AccessToken.token)"
+    # Get Logic App Connections
+    $Connections = Get-Connection -Connection $($LogicApp.parameters.'$connections'.value)
 }
-
-$apiVersion = "2016-06-01"
-$uri = "https://management.azure.com/subscriptions/$($subscriptionId)/resourceGroups/$($resourceGroupName)/providers/Microsoft.Logic/workflows/$($logicAppName)?api-version=$($apiVersion)"
-$LogicApp = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
-#endregion
-
-$Objects = Get-Action -Actions $($LogicApp.properties.definition.actions)
 
 if ($VerbosePreference -eq 'Continue') {
     Write-Verbose -Message ('Found {0} actions in Logic App' -f $Objects.Count)
     Write-Verbose ($objects | Format-Table | out-string)
 }
-
-# Get Logic App Connections
-$Connections = Get-Connection -Connection $($LogicApp.properties.parameters.'$connections'.value)
 
 # Create the Mermaid code
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
@@ -361,16 +390,16 @@ if ($VerbosePreference -eq 'Continue') {
 
 #region Generate Markdown documentation for Logic App Workflow
 $InputObject = [pscustomobject]@{
-    'LogicApp' = [PSCustomObject]@{
-        Name              = $LogicApp.name
+    'LogicApp'    = [PSCustomObject]@{
+        Name              = $LogicAppName
         ResourceGroupName = $resourceGroupName
-        Location          = $LogicApp.location
-        SubscriptionName  = (Get-AzContext).Subscription.Name
+        Location          = $Location
+        SubscriptionName  = $SubscriptionName
 
     }
-    'Actions'  = $objects
+    'Actions'     = $objects
     'Connections' = $Connections
-    'Diagram'  = $mermaidCode
+    'Diagram'     = $mermaidCode
 }
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
