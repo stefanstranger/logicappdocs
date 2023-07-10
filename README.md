@@ -41,6 +41,10 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
+## Change Log
+
+v1.0.0 - 2023-07-10
+* Initial release of the script
 
 
 
