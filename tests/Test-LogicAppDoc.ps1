@@ -6,11 +6,11 @@ $params = @{
     SubscriptionName = 'Visual Studio Enterprise'
     ResourceGroupName = 'jiraintegration-demo-rg'
     Location         = 'westeurope'
-    FilePath         = 'C:\Github\logicappdocs\examples\logic-jiraintegration-demo.json'
+    FilePath         = '.\logic-jiraintegration-demo.json'
     LogicAppName     = 'logic-jiraintegration-demo'
-    OutputPath       = 'C:\temp\'
+    OutputPath       = '..\examples\'
     Verbose          = $false
     Debug            = $false
 }
 
-. "C:\Github\logicappdocs\src\New-LogicAppDoc.ps1" @params
+. ..\src\New-LogicAppDoc.ps1 @params
