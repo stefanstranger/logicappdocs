@@ -7,9 +7,9 @@ This is a script to generate technical documentation for Azure Logic Apps. It us
 This project uses GitHub Issues to track bugs and feature requests.
 Please search the existing issues before filing new issues to avoid duplicates.
 
-- For new issues, file your bug or feature request as a new [issue].
+- For new issues, file your bug or feature request as a new [issue](https://github.com/stefanstranger/logicappdocs/issues).
   - If you can please add the Logic App Code (json content), cleared with any sensitive information to the issue if possible.
-- For help, discussion, and support questions about using this project, join or start a [discussion].
+- For help, discussion, and support questions about using this project, join or start a [discussion](https://github.com/stefanstranger/logicappdocs/discussions).
 
 Support for this project is limited to the resources listed above.
 
