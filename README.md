@@ -2,6 +2,17 @@
 
 This is a script to generate technical documentation for Azure Logic Apps. It uses PowerShell to retrieve the Logic App Workflow code and creates a Markdown file with the workflow in a Mermaid Diagram and a table of the actions used in the workflow.
 
+## Support
+
+This project uses GitHub Issues to track bugs and feature requests.
+Please search the existing issues before filing new issues to avoid duplicates.
+
+- For new issues, file your bug or feature request as a new [issue].
+  - If you can please add the Logic App Code (json content), cleared with any sensitive information to the issue if possible.
+- For help, discussion, and support questions about using this project, join or start a [discussion].
+
+Support for this project is limited to the resources listed above.
+
 ## Getting Started
 
 Clone the repository and run the script. The script will prompt you for the parameters. It will then create a Markdown file in the directory you provided when running the script.
@@ -47,3 +58,16 @@ And finally some great PowerShell community members for their feedback and sugge
 
 v1.0.0 - 2023-07-10
 * Initial release of the script
+
+## Contributing
+
+This project welcomes contributions and suggestions.
+If you are ready to contribute, please visit the [contribution guide](CONTRIBUTING.md).
+
+## Maintainers
+
+- [Stefan Stranger](https://github.com/stefanstranger)
+
+## License
+
+This project is [licensed under the MIT License](LICENSE).
