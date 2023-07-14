@@ -31,8 +31,12 @@ Navigate to the folder where you have cloned the repository and run the script.
 Login-AzAccount -SubscriptionId <SubscriptionId>
 
 # Run the script
+# Example:
+#  .\src\New-LogicAppDoc.ps1 -SubscriptionId 'dfc1f10c-a847-4250-bde8-93c3d6c53ea0' -ResourceGroupName 'jiraintegration-demo-rg' -LogicAppName 'logic-jiraintegration-demo' -OutputPath 'c:\temp' 
 .\src\New-LogicAppDoc.ps1 -SubscriptionId <SubscriptionId> -ResourceGroupName <ResourceGroupName> -LogicAppName <LogicAppName> -OutputPath <OutputDirectory>
 ```
+
+![Screenshot of script running](scriptscreenshot.png)
 
 ## Open the Markdown file
 
