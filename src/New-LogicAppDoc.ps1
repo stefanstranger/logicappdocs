@@ -72,11 +72,11 @@ Function Get-Action {
 
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
-        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '')
+        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('@', '-at-')
 
         # new runafter code
         $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {
-            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '')
+            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('@', '-at-')
         }
         elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
             # if Runafter is empty but has parent use parent.
@@ -336,7 +336,13 @@ else {
     $Objects = Get-Action -Actions $($LogicApp.definition.actions)
 
     # Get Logic App Connections
-    $Connections = Get-Connection -Connection $($LogicApp.parameters.'$connections'.value)
+    # For PowerApps Flows the connections are stored in a connectionMap json file. Skipp for now.
+    if ($LogicApp | Get-Member -MemberType NoteProperty -Name 'parameters') {
+        $Connections = Get-Connection -Connection $($LogicApp.parameters.'$connections'.value)
+    }
+    else {
+        $Connections = $null
+    }
 }
 
 if ($VerbosePreference -eq 'Continue') {
