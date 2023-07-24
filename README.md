@@ -60,6 +60,9 @@ And finally some great PowerShell community members for their feedback and sugge
 
 ## Change Log
 
+v1.0.1 - 2023-07-24
+* Fixed issue with missing outputpath parameter.
+
 v1.0.0 - 2023-07-10
 * Initial release of the script
 
