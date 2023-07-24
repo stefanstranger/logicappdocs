@@ -1,0 +1,582 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            },
+            "$authentication": {
+                "defaultValue": {},
+                "type": "SecureObject"
+            }
+        },
+        "triggers": {
+            "When_keywords_are_mentioned": {
+                "metadata": {
+                    "operationMetadataId": "dc244b70-aff2-4f02-a048-14f6122e87b6"
+                },
+                "type": "OpenApiConnectionWebhook",
+                "inputs": {
+                    "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                        "connectionName": "shared_teams",
+                        "operationId": "WebhookKeywordTrigger"
+                    },
+                    "parameters": {
+                        "threadType": "groupchat",
+                        "$search": "\"birthday\",\"bday\"",
+                        "requestBody/chats": [
+                            "19:70e0bb050895486cbf100a5bac7a937d@thread.v2"
+                        ]
+                    },
+                    "authentication": "@parameters('$authentication')"
+                }
+            }
+        },
+        "actions": {
+            "Apply_to_each": {
+                "foreach": "@triggerOutputs()?['body/value']",
+                "actions": {
+                    "Get_message_details": {
+                        "runAfter": {},
+                        "metadata": {
+                            "operationMetadataId": "6b6d11b5-b77b-482c-b886-f3441df6db89"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                            "host": {
+                                "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                                "connectionName": "shared_teams",
+                                "operationId": "GetMessageDetails"
+                            },
+                            "parameters": {
+                                "messageId": "@items('Apply_to_each')?['messageId']",
+                                "threadType": "groupchat",
+                                "body/recipient": "19:70e0bb050895486cbf100a5bac7a937d@thread.v2"
+                            },
+                            "authentication": "@parameters('$authentication')"
+                        }
+                    },
+                    "Condition": {
+                        "actions": {
+                            "Parse_JSON": {
+                                "runAfter": {},
+                                "metadata": {
+                                    "operationMetadataId": "3c7405f2-2d22-40fe-833f-7c357888cd02"
+                                },
+                                "type": "ParseJson",
+                                "inputs": {
+                                    "content": "@body('Get_message_details')",
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "statusCode": {
+                                                "type": "integer"
+                                            },
+                                            "headers": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "Transfer-Encoding": {
+                                                        "type": "string"
+                                                    },
+                                                    "Vary": {
+                                                        "type": "string"
+                                                    },
+                                                    "Strict-Transport-Security": {
+                                                        "type": "string"
+                                                    },
+                                                    "request-id": {
+                                                        "type": "string"
+                                                    },
+                                                    "client-request-id": {
+                                                        "type": "string"
+                                                    },
+                                                    "x-ms-ags-diagnostic": {
+                                                        "type": "string"
+                                                    },
+                                                    "OData-Version": {
+                                                        "type": "string"
+                                                    },
+                                                    "Timing-Allow-Origin": {
+                                                        "type": "string"
+                                                    },
+                                                    "x-ms-apihub-cached-response": {
+                                                        "type": "string"
+                                                    },
+                                                    "x-ms-apihub-obo": {
+                                                        "type": "string"
+                                                    },
+                                                    "Date": {
+                                                        "type": "string"
+                                                    },
+                                                    "Content-Type": {
+                                                        "type": "string"
+                                                    },
+                                                    "Content-Length": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "body": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "@@odata.context": {
+                                                        "type": "string"
+                                                    },
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "replyToId": {},
+                                                    "etag": {
+                                                        "type": "string"
+                                                    },
+                                                    "messageType": {
+                                                        "type": "string"
+                                                    },
+                                                    "createdDateTime": {
+                                                        "type": "string"
+                                                    },
+                                                    "lastModifiedDateTime": {
+                                                        "type": "string"
+                                                    },
+                                                    "lastEditedDateTime": {},
+                                                    "deletedDateTime": {},
+                                                    "subject": {},
+                                                    "summary": {},
+                                                    "chatId": {
+                                                        "type": "string"
+                                                    },
+                                                    "importance": {
+                                                        "type": "string"
+                                                    },
+                                                    "locale": {
+                                                        "type": "string"
+                                                    },
+                                                    "webUrl": {},
+                                                    "channelIdentity": {},
+                                                    "policyViolation": {},
+                                                    "eventDetail": {},
+                                                    "from": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "application": {},
+                                                            "device": {},
+                                                            "user": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "displayName": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "userIdentityType": {
+                                                                        "type": "string"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "body": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "contentType": {
+                                                                "type": "string"
+                                                            },
+                                                            "content": {
+                                                                "type": "string"
+                                                            },
+                                                            "plainTextContent": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    },
+                                                    "attachments": {
+                                                        "type": "array"
+                                                    },
+                                                    "mentions": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "mentionText": {
+                                                                    "type": "string"
+                                                                },
+                                                                "mentioned": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "application": {},
+                                                                        "device": {},
+                                                                        "conversation": {},
+                                                                        "tag": {},
+                                                                        "user": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "displayName": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "userIdentityType": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "id",
+                                                                "mentionText",
+                                                                "mentioned"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "reactions": {
+                                                        "type": "array"
+                                                    },
+                                                    "messageLink": {
+                                                        "type": "string"
+                                                    },
+                                                    "threadType": {
+                                                        "type": "string"
+                                                    },
+                                                    "conversationId": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "Post_message_in_a_chat_or_channel": {
+                                "runAfter": {
+                                    "Get_an_@mention_token_for_a_user": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "metadata": {
+                                    "operationMetadataId": "41ea652b-fa98-4499-b618-723bd5bea9c7"
+                                },
+                                "type": "OpenApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                                        "connectionName": "shared_teams",
+                                        "operationId": "PostMessageToConversation"
+                                    },
+                                    "parameters": {
+                                        "poster": "Flow bot",
+                                        "location": "Group chat",
+                                        "body/recipient": "19:70e0bb050895486cbf100a5bac7a937d@thread.v2",
+                                        "body/messageBody": " @{outputs('Get_an_@mention_token_for_a_user')?['body/atMention']} Congratulations with your birthday!\n<p>\n<img src=\"@{outputs('Compose_-_Output_Giphy_Birtday_url')}\" width=\"275\" height=\"250\" alt=\"Gihpy birtday image (GIF Image)\" style=\"padding-top:5px\">\n<p>\n<p>Interesting fact.</p>\n@{variables('varInterestingFact')}\n<p>\n<p>Have a great day!</p>\n<p>\n<p>Stefan Stranger</p>\n</p>\n"
+                                    },
+                                    "authentication": "@parameters('$authentication')"
+                                }
+                            },
+                            "Compose_-_Get_Mention_Id": {
+                                "runAfter": {
+                                    "Parse_JSON": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "metadata": {
+                                    "operationMetadataId": "b2f432b9-c80f-42d5-a395-58a487b0560f"
+                                },
+                                "type": "Compose",
+                                "inputs": "@first(body('Parse_JSON')?['mentions'])?['mentioned']?['user'].id"
+                            },
+                            "Get_an_@mention_token_for_a_user": {
+                                "runAfter": {
+                                    "Compose_-_Get_Mention_Id": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "metadata": {
+                                    "operationMetadataId": "02c8098f-9504-47c9-b735-31d0c6a2593d"
+                                },
+                                "type": "OpenApiConnection",
+                                "inputs": {
+                                    "host": {
+                                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                                        "connectionName": "shared_teams",
+                                        "operationId": "AtMentionUser"
+                                    },
+                                    "parameters": {
+                                        "userId": "@outputs('Compose_-_Get_Mention_Id')"
+                                    },
+                                    "authentication": "@parameters('$authentication')"
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Get_message_details": [
+                                "Succeeded"
+                            ]
+                        },
+                        "expression": {
+                            "equals": [
+                                "@outputs('Get_message_details')?['body/from/user/displayName']",
+                                "Stefan Stranger"
+                            ]
+                        },
+                        "metadata": {
+                            "operationMetadataId": "d4f1ee72-348e-4cea-8ca3-270e2a8335c1"
+                        },
+                        "type": "If"
+                    }
+                },
+                "runAfter": {
+                    "Compose_-_Get_messageid_property_from_first_Teams_Chat_message": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "57b52080-aa49-41a8-912e-560c500cdb30"
+                },
+                "type": "Foreach"
+            },
+            "Compose_-_Get_messageid_property_from_first_Teams_Chat_message": {
+                "runAfter": {
+                    "Condition_-_Check_for_empty_varDutchPeopleBirthdays": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "99c39733-be66-48f5-8e9d-3f1b56623e0c"
+                },
+                "type": "Compose",
+                "inputs": "@first(triggerOutputs()?['body/value'])?['messageId']"
+            },
+            "Initialize_variable_-_varBirthdayGifUrls": {
+                "runAfter": {},
+                "metadata": {
+                    "operationMetadataId": "db643358-1a0f-45f0-a1aa-81fa4ec453f1"
+                },
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "varBirthdayGifUrls",
+                            "type": "array",
+                            "value": [
+                                "https://media.giphy.com/media/l4KibWpBGWchSqCRy/giphy.gif",
+                                "https://media.giphy.com/media/WRL7YgP42OKns22wRD/giphy.gif",
+                                "https://media.giphy.com/media/26BRtW4zppWWjrsPu/giphy.gif",
+                                "https://media.giphy.com/media/VX5pqkR3E6EmlKFlmq/giphy.gif",
+                                "https://media.giphy.com/media/eDSnmeQ4MWmB2/giphy.gif",
+                                "https://media.giphy.com/media/Kg2tFStNdUsOmxv2GC/giphy.gif",
+                                "https://media.giphy.com/media/kaBuCyQLuCANfmoFMC/giphy.gif",
+                                "https://media.giphy.com/media/Dn5nT3gtXXqiRysvK2/giphy.gif"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Compose_-_Get_random_Giphy_Birtday_url": {
+                "runAfter": {
+                    "Initialize_variable_-_varInterestingFact": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "a76c7aab-df4a-45c8-ab53-915ded81cf8d"
+                },
+                "type": "Compose",
+                "inputs": "@variables('varBirthdayGifUrls')?[rand(0,length(variables('varBirthdayGifUrls')))]"
+            },
+            "Compose_-_Output_Giphy_Birtday_url": {
+                "runAfter": {
+                    "Compose_-_Get_random_Giphy_Birtday_url": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "bee73241-3b0c-41a5-8655-5bc4aee50ef5"
+                },
+                "type": "Compose",
+                "inputs": "@outputs('Compose_-_Get_random_Giphy_Birtday_url')"
+            },
+            "Initialize_variable_-_varDutchPeopleBirthdays": {
+                "runAfter": {
+                    "Initialize_variable_-_varBirthdayGifUrls": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "ce4435e0-a9f0-40a7-90ca-28f3bca05784"
+                },
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "varDutchPeopleBirthdays",
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
+            "Condition_-_Check_for_empty_varDutchPeopleBirthdays": {
+                "actions": {
+                    "Set_variable_-_varInterestingFact": {
+                        "runAfter": {},
+                        "metadata": {
+                            "operationMetadataId": "1eeb48c9-dd27-421e-936a-08f50b64216e"
+                        },
+                        "type": "SetVariable",
+                        "inputs": {
+                            "name": "varInterestingFact",
+                            "value": "<p>You are quite unique, no Dutch people are born on @{utcNow('MM/dd')}</p>"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Apply_to_each_-_DutchBirthdays_items": [
+                        "Succeeded"
+                    ]
+                },
+                "else": {
+                    "actions": {
+                        "Append_to_string_variable_-_varInterestingFact": {
+                            "runAfter": {},
+                            "metadata": {
+                                "operationMetadataId": "fa42dd22-9083-45c9-812d-a04270bdcbb9"
+                            },
+                            "type": "AppendToStringVariable",
+                            "inputs": {
+                                "name": "varInterestingFact",
+                                "value": "<p>Did you know, that the following people are also celebrating their birthdays on exact this date,</p>"
+                            }
+                        },
+                        "Append_to_string_variable_-_varInterestingFact_with_varDutchPeopleBirthdays": {
+                            "runAfter": {
+                                "Append_to_string_variable_-_varInterestingFact": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "metadata": {
+                                "operationMetadataId": "119de91a-f38c-4d58-91bf-d93b99940f48"
+                            },
+                            "type": "AppendToStringVariable",
+                            "inputs": {
+                                "name": "varInterestingFact",
+                                "value": "@variables('varDutchPeopleBirthdays')"
+                            }
+                        }
+                    }
+                },
+                "expression": {
+                    "not": {
+                        "contains": [
+                            "@variables('varDutchPeopleBirthdays')",
+                            "Dutch"
+                        ]
+                    }
+                },
+                "metadata": {
+                    "operationMetadataId": "fbbb0a13-9788-491f-9466-b06058dc9597"
+                },
+                "type": "If"
+            },
+            "Initialize_variable_-_varInterestingFact": {
+                "runAfter": {
+                    "Initialize_variable_-_varDutchPeopleBirthdays": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "1bc37fa2-98ae-42a0-b738-a8e09b7d0d6b"
+                },
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "varInterestingFact",
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
+            "Compose_-_Get_todays_date": {
+                "runAfter": {
+                    "Compose_-_Output_Giphy_Birtday_url": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "0ba50969-a786-4e56-9e85-31977a427e51"
+                },
+                "type": "Compose",
+                "inputs": "@formatDateTime(utcNow(), 'M/d')"
+            },
+            "SharePoint_-_Get_DutchBirthdays_List_Items": {
+                "runAfter": {
+                    "Compose_-_Get_todays_date": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "a67e7cc6-3dc7-456d-9e15-dd6a328434f3"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                    "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+                        "connectionName": "shared_sharepointonline",
+                        "operationId": "GetItems"
+                    },
+                    "parameters": {
+                        "dataset": "https://microsofteur-my.sharepoint.com/personal/stefstr_microsoft_com",
+                        "table": "d6f0b0db-cd01-4b99-b0b6-518872eb17a6",
+                        "$filter": "Title eq '@{outputs('Compose_-_Get_todays_date')}'"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                }
+            },
+            "Apply_to_each_-_DutchBirthdays_items": {
+                "foreach": "@outputs('SharePoint_-_Get_DutchBirthdays_List_Items')?['body/value']",
+                "actions": {
+                    "Compose": {
+                        "runAfter": {},
+                        "metadata": {
+                            "operationMetadataId": "1dc7ae7f-a1e3-443e-8601-a665450c8ad1"
+                        },
+                        "type": "Compose",
+                        "inputs": "@items('Apply_to_each_-_DutchBirthdays_items')?['field_2']"
+                    },
+                    "Append_to_string_variable_-_test": {
+                        "runAfter": {
+                            "Compose": [
+                                "Succeeded"
+                            ]
+                        },
+                        "metadata": {
+                            "operationMetadataId": "3b449b5f-b7dc-46db-802d-79ef5f07def8"
+                        },
+                        "type": "AppendToStringVariable",
+                        "inputs": {
+                            "name": "varDutchPeopleBirthdays",
+                            "value": "@concat('<li>',outputs('Compose'),decodeUriComponent('%0A'),'</li>')"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "SharePoint_-_Get_DutchBirthdays_List_Items": [
+                        "Succeeded"
+                    ]
+                },
+                "metadata": {
+                    "operationMetadataId": "33b9a2fc-0adf-4118-96f7-0f52f05aab6a"
+                },
+                "type": "Foreach"
+            }
+        }
+    }
+}
