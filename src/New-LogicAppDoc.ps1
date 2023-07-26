@@ -97,8 +97,9 @@ Function Get-Action {
         $type = $action.type
 
         # new ChildActions code
-        $childActions = if ($action | Get-Member -MemberType Noteproperty -Name 'Actions') { $action.Actions.PSObject.Properties.Name } else { $null }
-
+        #$childActions = if ($action | Get-Member -MemberType Noteproperty -Name 'Actions') { $action.Actions.PSObject.Properties.Name } else { $null }
+        $childActions = if (($action | Get-Member -MemberType Noteproperty -Name 'Actions') -and ($action.Actions.PSObject.Properties | measure-object).count -gt 0) { $action.Actions.PSObject.Properties.Name } else { $null }
+        
         # Create PSCustomObject
         [PSCustomObject]@{
             ActionName   = $actionName
@@ -113,9 +114,13 @@ Function Get-Action {
             # Check if the else property is present
             if ($action | Get-Member -MemberType Noteproperty -Name 'else') {
                 # Get the actions for the true condition
-                Get-Action -Actions $($action.Actions) -Parent ('{0}-True' -f $actionName)
-                # Get the actions for the false condition
-                Get-Action -Actions $($action.else.Actions) -Parent ('{0}-False' -f $actionName)
+                Write-Verbose -Message ('Processing action {0}' -f $actionName)
+                # Check if Action has any actions for the true condition
+                if (![string]::IsNullOrEmpty($action.actions)) { 
+                    Get-Action -Actions $($action.Actions) -Parent ('{0}-True' -f $actionName)
+                    # Get the actions for the false condition
+                    Get-Action -Actions $($action.else.Actions) -Parent ('{0}-False' -f $actionName)
+                }
             }
             #When there is only action for the true condition
             else {
