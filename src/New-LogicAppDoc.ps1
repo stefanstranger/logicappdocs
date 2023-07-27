@@ -38,7 +38,7 @@ $WarningPreference = 'SilentlyContinue'
 
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.0.1
+Version: 1.0.2
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -97,8 +97,9 @@ Function Get-Action {
         $type = $action.type
 
         # new ChildActions code
-        $childActions = if ($action | Get-Member -MemberType Noteproperty -Name 'Actions') { $action.Actions.PSObject.Properties.Name } else { $null }
-
+        #$childActions = if ($action | Get-Member -MemberType Noteproperty -Name 'Actions') { $action.Actions.PSObject.Properties.Name } else { $null }
+        $childActions = if (($action | Get-Member -MemberType Noteproperty -Name 'Actions') -and ($action.Actions.PSObject.Properties | measure-object).count -gt 0) { $action.Actions.PSObject.Properties.Name } else { $null }
+        
         # Create PSCustomObject
         [PSCustomObject]@{
             ActionName   = $actionName
@@ -113,9 +114,13 @@ Function Get-Action {
             # Check if the else property is present
             if ($action | Get-Member -MemberType Noteproperty -Name 'else') {
                 # Get the actions for the true condition
-                Get-Action -Actions $($action.Actions) -Parent ('{0}-True' -f $actionName)
-                # Get the actions for the false condition
-                Get-Action -Actions $($action.else.Actions) -Parent ('{0}-False' -f $actionName)
+                Write-Verbose -Message ('Processing action {0}' -f $actionName)
+                # Check if Action has any actions for the true condition
+                if (![string]::IsNullOrEmpty($action.actions)) { 
+                    Get-Action -Actions $($action.Actions) -Parent ('{0}-True' -f $actionName)
+                    # Get the actions for the false condition
+                    Get-Action -Actions $($action.else.Actions) -Parent ('{0}-False' -f $actionName)
+                }
             }
             #When there is only action for the true condition
             else {
@@ -248,16 +253,6 @@ Function Sort-Action {
         }
         Write-Verbose -Message ('Current action {0} with Order Id {1}' -f $($currentAction.ActionName), $($currentAction.Order) )
     }
-}
-
-Function Format-MarkdownTableJson {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)]
-        $Json
-    )
-
-    (($Json -replace '^{', '<pre>{') -replace '}$', '}</pre>') -replace '\r\n', '<br>'
 }
 
 # From PowerShell module AzViz. (https://raw.githubusercontent.com/PrateekKumarSingh/AzViz/master/AzViz/src/private/Test-AzLogin.ps1)
@@ -403,6 +398,6 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath
+$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $LogicAppName
 Write-Host ('Logic App Workflow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
