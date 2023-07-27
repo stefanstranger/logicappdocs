@@ -60,6 +60,10 @@ And finally some great PowerShell community members for their feedback and sugge
 
 ## Change Log
 
+v1.0.2 - 2023-07-27
+* Fixed issue with empty actions. See Github Issue1
+* Markdown file now has the same name as the Logic App Workflow name.
+
 v1.0.1 - 2023-07-24
 * Fixed issue with missing outputpath parameter.
 
