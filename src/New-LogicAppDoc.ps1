@@ -38,7 +38,7 @@ $WarningPreference = 'SilentlyContinue'
 
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.0.2
+Version: 1.0.3
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -72,11 +72,11 @@ Function Get-Action {
 
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
-        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '')
+        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '')
 
         # new runafter code
         $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {
-            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '')
+            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '')
         }
         elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
             # if Runafter is empty but has parent use parent.
