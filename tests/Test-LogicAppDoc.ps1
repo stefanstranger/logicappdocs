@@ -6,9 +6,9 @@ $params = @{
     SubscriptionName = 'Visual Studio Enterprise'
     ResourceGroupName = 'jiraintegration-demo-rg'
     Location         = 'westeurope'
-    FilePath         = '.\powerapp-flow.json'
-    LogicAppName     = 'powerapp-flow-demo'
-    OutputPath       = '.\examples\'
+    FilePath         = '..\examples\logic-jiraintegration-demo.json'
+    LogicAppName     = 'logic-jiraintegration-demo'
+    OutputPath       = '..\examples\'
     Verbose          = $false
     Debug            = $false
 }
