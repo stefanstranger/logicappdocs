@@ -55,8 +55,8 @@ else {
 #endregion
 
 #region Set Variables
-$templateName = 'Azure-LogicApp-Documentation'
-$templatePath = (Join-Path $PSScriptRoot 'LogicApp.Doc.ps1')
+$templateName = 'PowerAutomate-Documentation'
+$templatePath = (Join-Path $PSScriptRoot 'PowerAutomate.Doc.ps1')
 #endregion
 
 #region Helper Functions
@@ -72,11 +72,11 @@ Function Get-Action {
 
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
-        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '')
+        $actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '').Replace('@', '')
 
         # new runafter code
         $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {
-            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '')
+            $action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '').Replace('@', '')
         }
         elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
             # if Runafter is empty but has parent use parent.
@@ -349,7 +349,81 @@ Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (J
 #endregion
 
 #region Unzip PowerAutomate Flow Export Package
-Expand-Archive -LiteralPath (Join-Path $OutputPath ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $OutputPath
+Expand-Archive -LiteralPath (Join-Path $OutputPath ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $OutputPath -Force -OutVariable extractedFiles
 #endregion
 
+#region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
+$PowerAutomateFlowJson = Get-Content -Path (Join-Path $OutputPath ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
+$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
+#endregion
+
+$Objects = Get-Action -Actions $($PowerAutomateFlowJson.properties.definition.actions)
+
+# Get Logic App Connections
+$Connections = 'bar' #Get-Connection -Connection $($LogicApp.properties.parameters.'$connections'.value)
+
+if ($VerbosePreference -eq 'Continue') {
+    Write-Verbose -Message ('Found {0} actions in PowerAutomate Flow' -f $Objects.Count)
+    Write-Verbose ($objects | Format-Table | out-string)
+}
+
+# Create the Mermaid code
+Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
+
+$mermaidCode = "graph TB" + [Environment]::NewLine
+$mermaidCode += "    Trigger" + [Environment]::NewLine
+
+
+# Group actions by parent property
+$objects | Group-Object -Property Parent | ForEach-Object {
+    if (![string]::IsNullOrEmpty($_.Name)) {
+        $subgraphName = $_.Name
+        $mermaidCode += "    subgraph $subgraphName" + [Environment]::NewLine
+        $mermaidCode += "    direction TB" + [Environment]::NewLine
+        # Add children action nodes to subgraph
+        foreach ($childAction in $_.Group.ActionName) {
+            $mermaidCode += "        $childAction" + [Environment]::NewLine
+        }
+        $mermaidCode += "    end" + [Environment]::NewLine
+    }
+    else {}        
+}
+
+# Create links between runafter and actionname properties
+foreach ($object in $objects) {
+    if ($object | Get-Member -MemberType NoteProperty -Name 'RunAfter') {
+        # Check if the runafter property is not empty
+        if (![string]::IsNullOrEmpty($object.RunAfter)) {
+            $mermaidCode += "    $($object.RunAfter) --> $($object.ActionName)" + [Environment]::NewLine
+        }
+    }        
+}
+
+# Create link between trigger and first action
+$firstActionLink = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
+$mermaidCode += "    Trigger --> $firstActionLink" + [Environment]::NewLine
+
+Sort-Action -Actions $objects
+
+if ($VerbosePreference -eq 'Continue') {
+    Write-Verbose -Message ('Found {0} actions in PowerAutomate Flow' -f $Objects.Count)
+    Write-Verbose ($objects | Select-Object -Property ActionName, RunAfter, Type, Parent, Order | Sort-Object -Property Order | Format-Table | Out-String)
+}
+
+#region Generate Markdown documentation for Logic App Workflow
+$InputObject = [pscustomobject]@{
+    'PowerAutomateFlow' = [PSCustomObject]@{
+        Name            = $PowerAutomateName
+        EnvironmentName = $environmentName
+
+    }
+    'Actions'           = $objects
+    'Connections'       = $Connections
+    'Diagram'           = $mermaidCode
+}
+
+$options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
+$null = [PSDocs.Configuration.PSDocumentOption]$Options
+$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $PowerAutomateName
+Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
