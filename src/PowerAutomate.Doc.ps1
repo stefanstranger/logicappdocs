@@ -27,9 +27,15 @@ $($InputObject.diagram)
 ```````
 "@       
     }
-    
+ 
         Section 'PowerAutomate Flow Actions' {
         "This section shows an overview of PowerAutomate Flow actions and their dependencies."
+
+        Section 'PowerAutomate Flow Triggers' {
+            $($InputObject.Triggers) | 
+            Select-Object -Property 'Name', @{Name = 'Type'; Expression = { $_.Value.type } }, @{Name = 'Inputs'; Expression = { Format-MarkdownTableJson -Json $($_.value.Inputs | ConvertTo-Json -Depth 10) } } |
+            Table -Property 'Name', 'Type', 'Inputs'
+        }
 
         Section 'Actions' {            
             $($InputObject.actions) |                 
@@ -44,9 +50,8 @@ $($InputObject.diagram)
 
         Section 'Connections' {
             $($InputObject.Connections) |
-            Select-Object -Property 'ConnectionName', 'ConnectionId', @{Name = 'ConnectionProperties'; Expression = { Format-MarkdownTableJson -Json $($_.ConnectionProperties | ConvertTo-Json) } } |
-            Table -Property 'ConnectionName', 'ConnectionId', 'ConnectionProperties'
+            Select-Object -Property 'ConnectionName', @{Name = 'ConnectionId'; Expression = {$_.id}} |
+            Table -Property 'ConnectionName', 'ConnectionId'
         }
     }
-
 }
