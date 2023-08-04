@@ -56,6 +56,8 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 [Bernie White](https://github.com/BernieWhite) for his PowerShell PSDocs module that helps with the creation of Markdown from PowerShell objects.
 
+[Rene Modery](https://github.com/modery/PowerDocu) for his PowerDocu script that provided ideas on how this solution. PoewrDocu helps gereate documentation for Power App canvas apps and Power Automate flows.
+
 And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
 ## Change Log
