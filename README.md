@@ -1,6 +1,6 @@
 # Introduction
 
-This is a script to generate technical documentation for Azure Logic Apps. It uses PowerShell to retrieve the Logic App Workflow code and creates a Markdown file with the workflow in a Mermaid Diagram and tables of the actions and connections used in the workflow.
+This solution contains scripts to generate technical documentation for <u>Azure Logic Apps</u> and <u>Power Automate Flows</u>. It uses PowerShell to retrieve the Logic App or PowerAutomate Flow and creates a Markdown file with the flow in a Mermaid Diagram and tables of the actions and connections used in the flow.
 
 ## Support
 
@@ -22,9 +22,11 @@ Clone the repository and run the script. The script will prompt you for the para
 git clone https://github.com/stefanstranger/logicappdocs.git
 ```
 
-## Run the script
+## Run the New-LogicAppDoc.ps1 PowerShell script to create the Markdown file for an Azure Logic App
 
-Navigate to the folder where you have cloned the repository and run the script.
+Navigate to the folder where you have cloned the repository and run the New-LogicAppDoc.ps1 script.
+
+<img src="./images/folderstructure_LogicAppFlow.png" alt="Folder structure of Logic App script" width="500">
 
 ```powershell
 # Authenticate to Azure where the Azure Logic App is located
@@ -36,17 +38,40 @@ Login-AzAccount -SubscriptionId <SubscriptionId>
 .\src\New-LogicAppDoc.ps1 -SubscriptionId <SubscriptionId> -ResourceGroupName <ResourceGroupName> -LogicAppName <LogicAppName> -OutputPath <OutputDirectory>
 ```
 
-![Screenshot of script running](scriptscreenshot.png)
+<img src="./images/logicappscript.png" alt="Powershell script screenshot of New-LogicAppDoc.ps1 script running in console" width="1200">
+
+## Run the New-PowerAutomateDoc.ps1 PowerShell script to create the Markdown file for a Power Automate Flow
+
+Navigate to the folder where you have cloned the repository and run the New-PowerAutomateDoc.ps1 script.
+
+<img src="./images/folderstructure_PowerAutomateFlow.png" alt="Folder structure of Power Automate script" width="500">
+
+To retrieve the Power Automate Environment Id, you can login to your Power Automate Portal in your browser via https://make.preview.powerautomate.com/ and copy the environment id from the URL.
+
+<img src="./images/powerautomateenvironmentid.png" alt="Screenshot of Power Automate Portal to find environment id from url" width="1200">
+
+```powershell
+# Run the script
+# Example:
+#  .\src\New-PowerAutomateDoc.ps1 -EnvironmentName '839abcd7-59ab-4243-97ec-a5b8fcc104e4' -PowerAutomateName 'Notify of Canceled Meetings'
+.\src\New-PowerAutomateDoc.ps1 -EnvironmentName <Power Automate Environment Id> -PowerAutomateName <Power Automate Flow Name>
+```
+
+<img src="./images/powerautomatescript.png" alt="Powershell script screenshot of New-PowerAutomateDoc.ps1 script running in console" width="1200">
 
 ## Open the Markdown file
 
 You can open the Markdown file in Visual Studio Code or any other Markdown editor.
 
-Go to the directory where you have saved the Markdown file (OutputPath) and open the file called Azure-LogicApp-Documentation.md.
+Go to the directory where you have saved the Markdown file (OutputPath) and open the Markdown file created.
 
-## Example
+## Example - Logic App Flow
 
-![Example of the generated Markdown file](./examplemarkdowndocument.png)
+![Example of the generated Markdown file](./images/examplemarkdownlogicappflowdocument.png)
+
+## Example - Power Automate Flow
+
+![Example of the generated Markdown file for Power Automate Flow](./images/examplemarkdownpowerautomateflowdocument.png)
 
 ## Credits
 
@@ -56,9 +81,17 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 [Bernie White](https://github.com/BernieWhite) for his PowerShell PSDocs module that helps with the creation of Markdown from PowerShell objects.
 
+[Rene Modery](https://github.com/modery/PowerDocu) for his PowerDocu script that provided ideas for this solution. PowerDocu helps generate documentation for Power App canvas apps and Power Automate flows.
+
 And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
 ## Change Log
+
+v1.1.0 - 2023-08-01
+* Added logic to create Markdown documentation for Power Automate Flows.
+* Changed ascii logo
+* Fixed issue when no connections are configured
+* Moved helper functions to separate Helper.ps1 script
 
 v1.0.3 - 2023-08-01
 * Fixed issue with Mermaid not accepting the pipe character. See [Github Issue4](https://github.com/stefanstranger/logicappdocs/issues/4)
