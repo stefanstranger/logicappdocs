@@ -18,10 +18,14 @@ $WarningPreference = 'SilentlyContinue'
 
 
 @"
-╭──────────────────────╮
-│    logicappdocs      │
-╰──────────────────────╯
 
+██╗      ██████╗  ██████╗ ██╗ ██████╗ █████╗ ██████╗ ██████╗ ██████╗  ██████╗  ██████╗███████╗
+██║     ██╔═══██╗██╔════╝ ██║██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔═══██╗██╔════╝██╔════╝
+██║     ██║   ██║██║  ███╗██║██║     ███████║██████╔╝██████╔╝██║  ██║██║   ██║██║     ███████╗
+██║     ██║   ██║██║   ██║██║██║     ██╔══██║██╔═══╝ ██╔═══╝ ██║  ██║██║   ██║██║     ╚════██║
+███████╗╚██████╔╝╚██████╔╝██║╚██████╗██║  ██║██║     ██║     ██████╔╝╚██████╔╝╚██████╗███████║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝     ╚═════╝  ╚═════╝  ╚═════╝╚══════╝
+                                                                                                                                                         
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
 Version: 1.0.4
@@ -106,18 +110,22 @@ Function Create-ExportPackage {
 #region Main Script
 
 #region login to Power Automate and get PowerAutomate Flow
+Write-Host ('Login to Power Automate and get PowerAutomate Flow') -ForegroundColor Green
 Get-Flow -EnvironmentName $EnvironmentName | Where-Object { $_.DisplayName -eq $PowerAutomateName } -OutVariable PowerAutomateFlow
 #endregion
 
 #region Create PowerAutomate Flow Export Package
+Write-Host ('Create PowerAutomate Flow Export Package') -ForegroundColor Green
 Create-ExportPackage -Flow $PowerAutomateFlow -OutVariable packageDownload
 #endregion
 
 #region download PowerAutomate Flow Export Package
+Write-Host ('Download PowerAutomate Flow Export Package') -ForegroundColor Green
 Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName)))
 #endregion
 
 #region Unzip PowerAutomate Flow Export Package
+Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
 Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $($env:TEMP) -Force
 #endregion
 
@@ -152,7 +160,6 @@ if ($VerbosePreference -eq 'Continue') {
 
 # Create the Mermaid code
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
-
 $mermaidCode = "graph TB" + [Environment]::NewLine
 $mermaidCode += "    $($triggers.name)" + [Environment]::NewLine
 
@@ -198,7 +205,6 @@ $InputObject = [pscustomobject]@{
     'PowerAutomateFlow' = [PSCustomObject]@{
         Name            = $PowerAutomateName
         EnvironmentName = $environmentName
-
     }
     'Triggers'          = $triggers
     'Actions'           = $objects
