@@ -28,7 +28,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.0.4
+Version: 1.1.0
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
