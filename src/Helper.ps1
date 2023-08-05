@@ -2,7 +2,6 @@
     Helper script containing helper functions for the LogicAppDoc and PowerAutomateDoc PowerShell scripts.
 #>
 
-# Fix error: The term 'ActionName' is not recognized as a name of a cmdlet, function, script file, or executable program.
 Function Get-Action {
 
     [CmdletBinding()]
