@@ -63,7 +63,7 @@ To retrieve the Power Automate Environment Id, you can login to your Power Autom
 
 You can open the Markdown file in Visual Studio Code or any other Markdown editor.
 
-Go to the directory where you have saved the Markdown file (OutputPath) and open the file called Azure-LogicApp-Documentation.md.
+Go to the directory where you have saved the Markdown file (OutputPath) and open the Markdown file created.
 
 ## Example - Logic App Flow
 
