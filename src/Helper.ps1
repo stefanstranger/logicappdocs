@@ -2,6 +2,7 @@
     Helper script containing helper functions for the LogicAppDoc and PowerAutomateDoc PowerShell scripts.
 #>
 
+# Fix error: The term 'ActionName' is not recognized as a name of a cmdlet, function, script file, or executable program.
 Function Get-Action {
 
     [CmdletBinding()]
@@ -14,12 +15,10 @@ Function Get-Action {
 
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
-        #$actionName = $key.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '').Replace('@', '')
         $actionName = $key -replace '[ |(|)|@]', '_'
 
         # new runafter code
-        $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {
-            #$action.runAfter.PSObject.Properties.Name.Replace(' ', '_').Replace('(', '').Replace(')', '').Replace('|', '').Replace('@', '')
+        $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {            
             $action.runAfter.PSObject.Properties.Name -replace '[ |(|)|@]', '_'
         }
         elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
