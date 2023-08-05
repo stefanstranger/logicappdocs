@@ -28,7 +28,7 @@ $($InputObject.diagram)
 "@       
     }
     
-        Section 'Logic App Workflow Actions' {
+    Section 'Logic App Workflow Actions' {
         "This section shows an overview of Logic App Workflow actions and their dependencies."
 
         Section 'Actions' {            
@@ -39,14 +39,15 @@ $($InputObject.diagram)
         }
     }
 
-    Section 'Logic App Connections' {
-        "This section shows an overview of Logic App Workflow connections."
+    if ($InputObject.Connections) {
+        Section 'Logic App Connections' {
+            "This section shows an overview of Logic App Workflow connections."
 
-        Section 'Connections' {
-            $($InputObject.Connections) |
-            Select-Object -Property 'ConnectionName', 'ConnectionId', @{Name = 'ConnectionProperties'; Expression = { Format-MarkdownTableJson -Json $($_.ConnectionProperties | ConvertTo-Json) } } |
-            Table -Property 'ConnectionName', 'ConnectionId', 'ConnectionProperties'
+            Section 'Connections' {
+                $($InputObject.Connections) |
+                Select-Object -Property 'ConnectionName', 'ConnectionId', @{Name = 'ConnectionProperties'; Expression = { Format-MarkdownTableJson -Json $($_.ConnectionProperties | ConvertTo-Json) } } |
+                Table -Property 'ConnectionName', 'ConnectionId', 'ConnectionProperties'
+            }
         }
     }
-
 }
