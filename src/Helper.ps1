@@ -83,6 +83,9 @@ Function Sort-Action {
         $Actions
     )
 
+    # Turn input into an array. Otherwise count will not work.
+    $Actions = @($Actions)
+
     # Search for the action that has an empty RunAfter property
     $firstAction = $Actions | Where-Object { [string]::IsNullOrEmpty($_.RunAfter) } |
     Add-Member -MemberType NoteProperty -Name Order -Value 0 -PassThru
