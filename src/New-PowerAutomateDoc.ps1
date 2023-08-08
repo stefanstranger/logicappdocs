@@ -108,6 +108,7 @@ Function Create-ExportPackage {
 
 #region Main Script
 
+<#
 #region login to Power Automate and get PowerAutomate Flow
 Write-Host ('Login to Power Automate and get PowerAutomate Flow') -ForegroundColor Green
 Get-Flow -EnvironmentName $EnvironmentName | Where-Object { $_.DisplayName -eq $PowerAutomateName } -OutVariable PowerAutomateFlow
@@ -127,25 +128,33 @@ Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (J
 Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
 Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $($env:TEMP) -Force
 #endregion
+#>
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
-$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
-$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
+#$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
+$PowerAutomateFlowJson = Get-Content -Path 'C:\Users\stefstr\Downloads\sort-action-bug-sample\sort-action-bug-sample.json' -Raw | ConvertFrom-Json
+#$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
+$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.definition
 #endregion
 
-$Objects = Get-Action -Actions $($PowerAutomateFlowJson.properties.definition.actions)
+#$Objects = Get-Action -Actions $($PowerAutomateFlowJson.properties.definition.actions)
+$Objects = Get-Action -Actions $($PowerAutomateFlowJson.definition.actions)
 
 # Get Logic App Connections
-if ($PowerAutomateFlowJson.properties | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
-    $Connections = $($PowerAutomateFlowJson.properties.connectionReferences.psobject.properties.value)
+#if ($PowerAutomateFlowJson.properties | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
+if ($PowerAutomateFlowJson | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
+    #$Connections = $($PowerAutomateFlowJson.properties.connectionReferences.psobject.properties.value)
+    $Connections = $($PowerAutomateFlowJson.connectionReferences.psobject.properties.value)
 }
 else {
     $Connections = @()
 }
 
 # Get Logic App Triggers
-if ($PowerAutomateFlowJson.properties.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
-    $triggers = $($PowerAutomateFlowJson.properties.definition.triggers.psobject.Properties)
+#if ($PowerAutomateFlowJson.properties.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
+if ($PowerAutomateFlowJson.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
+    #$triggers = $($PowerAutomateFlowJson.properties.definition.triggers.psobject.Properties)
+    $triggers = $($PowerAutomateFlowJson.definition.triggers.psobject.Properties)
 }
 else {
     $triggers = @()
