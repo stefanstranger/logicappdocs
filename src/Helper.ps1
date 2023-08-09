@@ -48,7 +48,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Inputs       = Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress)
+            Inputs       = Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))
         }
 
         if ($action.type -eq 'If') {
@@ -206,4 +206,22 @@ Function Remove-Secrets {
     # Remove the secrets from the Logic App Inputs
     $regexPattern = '(\"headers":\{"Authorization":"(Bearer|Basic) )[^"]*'
     $Inputs -replace $regexPattern, '$1******'
+}
+
+# When the input contains a HTML input content, this needs to be wrapped within a <textarea disabled> and </textarea> tag.
+Function Format-HTMLInputContent {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Inputs
+    )
+
+    # If Input contains HTML input content, remove '\n characters and wrap the input within a <textarea disabled> and </textarea> tag.
+    if ($Inputs -match '<html>') {
+        Write-Verbose -Message ('Found HTML input content in Action Inputs')
+        $($Inputs -replace '\\n', '') -replace '<html>', '<textarea disabled><html>' -replace '</html>', '</html></textarea>'
+    }
+    else {
+        $Inputs
+    }
 }
