@@ -122,7 +122,7 @@ Function Sort-Action {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
-                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f $($MyInvocation.ScriptLineNumber), $currentAction)
+                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '125', $currentAction)
                     # Increment the indexNumber
                     $indexNumber++
                 }   
@@ -130,12 +130,27 @@ Function Sort-Action {
                     # Add Order property to the action that it's RunAfter property updated from the Parent property.
                     # This is the first action in a foreach loop.
                     # After this action the rest of rest of the foreach actions need to be processed.
-                    $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } |
-                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) }
-                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '136', $currentAction)
-                    # Increment the indexNumber
-                    $indexNumber++
+                    if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } ) {
+                        $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } |
+                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                        $currentAction = $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) }
+                        Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '137', $currentAction)
+                        # Increment the indexNumber
+                        $indexNumber++
+                    }
+                    else {
+                        # There is another action with the same RunAfter property that runs parallel with the current action.
+                        # Start with the first action that has the same RunAfter property.
+                        if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) }) {
+                            $($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })[0] | 
+                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                            # CurrentAction will be empty if the ???
+                            $currentAction = $($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })[0]
+                            Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '149', $currentAction)
+                            # Increment the indexNumber
+                            $indexNumber++                    
+                        }
+                    }                    
                 }             
             }
             else {
@@ -145,18 +160,18 @@ Function Sort-Action {
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     # CurrentAction will be empty if the ??
                     $currentAction = ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })
-                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '148', $currentAction)# Increment the indexNumber
+                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '163', $currentAction)
+                    # Increment the indexNumber
                     $indexNumber++                    
                 }
                 elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } ) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     # Fix the issue when currentAction is empty
-                    if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) })
-                    {
+                    if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }) {
                         $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
                     }
-                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '159', $currentAction)
+                    Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '174', $currentAction)
                     # Increment the indexNumber
                     $indexNumber++
                 }
@@ -167,9 +182,21 @@ Function Sort-Action {
                         Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                         # CurrentAction will be empty if the ??
                         $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
-                        Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '170', $currentAction)
+                        Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '185', $currentAction)
                         # Increment the indexNumber
                         $indexNumber++                    
+                    }
+                    else {
+                        # When an action runs after a condition find orderid of last condition actionname
+                        if ($Actions | Where-Object {!($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
+                            $Actions | Where-Object {!($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
+                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                            # CurrentAction
+                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                            Write-Output -InputObject ('Line Number {0}: Current Action: {1}' -f '196', $currentAction)
+                            # Increment the indexNumber
+                            $indexNumber++
+                        }
                     }
                 }                         
             }                
