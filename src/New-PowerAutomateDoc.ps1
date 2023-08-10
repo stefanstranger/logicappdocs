@@ -84,8 +84,6 @@ Function Create-ExportPackage {
     $body = @{
         includedResourceIds = @(
             "/providers/Microsoft.Flow/flows/$($flow.FlowName)"
-            $flow.Internal.properties.connectionReferences.PSObject.Properties.value.id
-            $flow.Internal.properties.connectionReferences.PSObject.Properties | Foreach-Object { $('{0}/connections/{1}' -f $($_.value.id), $($_.value.connectionName)) } 
         )
         details             = @{
             displayName       = $flow.DisplayName
