@@ -129,30 +129,23 @@ Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutoma
 #>
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
-#$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
-$PowerAutomateFlowJson = Get-Content -Path 'C:\Users\stefstr\Downloads\sort-action-bug-sample\sort-action-bug-sample.json' -Raw | ConvertFrom-Json
-#$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
-$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.definition
+$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
+$PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
 #endregion
 
-#$Objects = Get-Action -Actions $($PowerAutomateFlowJson.properties.definition.actions)
-$Objects = Get-Action -Actions $($PowerAutomateFlowJson.definition.actions)
+$Objects = Get-Action -Actions $($PowerAutomateFlowJson.properties.definition.actions)
 
 # Get Logic App Connections
-#if ($PowerAutomateFlowJson.properties | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
-if ($PowerAutomateFlowJson | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
-    #$Connections = $($PowerAutomateFlowJson.properties.connectionReferences.psobject.properties.value)
-    $Connections = $($PowerAutomateFlowJson.connectionReferences.psobject.properties.value)
+if ($PowerAutomateFlowJson.properties | Get-Member -MemberType NoteProperty -Name 'connectionReferences') {
+    $Connections = $($PowerAutomateFlowJson.properties.connectionReferences.psobject.properties.value)
 }
 else {
     $Connections = @()
 }
 
 # Get Logic App Triggers
-#if ($PowerAutomateFlowJson.properties.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
-if ($PowerAutomateFlowJson.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
-    #$triggers = $($PowerAutomateFlowJson.properties.definition.triggers.psobject.Properties)
-    $triggers = $($PowerAutomateFlowJson.definition.triggers.psobject.Properties)
+if ($PowerAutomateFlowJson.properties.definition | Get-Member -MemberType NoteProperty -Name 'triggers') {
+    $triggers = $($PowerAutomateFlowJson.properties.definition.triggers.psobject.Properties)
 }
 else {
     $triggers = @()
@@ -168,7 +161,6 @@ if ($VerbosePreference -eq 'Continue') {
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
 $mermaidCode = "graph TB" + [Environment]::NewLine
 $mermaidCode += "    $($triggers.name)" + [Environment]::NewLine
-
 
 # Group actions by parent property
 $objects | Group-Object -Property Parent | ForEach-Object {
@@ -206,7 +198,7 @@ if ($VerbosePreference -eq 'Continue') {
     Write-Verbose ($objects | Select-Object -Property ActionName, RunAfter, Type, Parent, Order | Sort-Object -Property Order | Format-Table | Out-String)
 }
 
-#region Generate Markdown documentation for Logic App Workflow
+#region Generate Markdown documentation for Power Automate Flow
 $InputObject = [pscustomobject]@{
     'PowerAutomateFlow' = [PSCustomObject]@{
         Name            = $PowerAutomateName
@@ -220,6 +212,17 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $PowerAutomateName
+
+$invokePSDocumentSplat = @{
+    Path = $templatePath
+    Name = $templateName
+    InputObject = $InputObject
+    Culture = 'en-us'
+    Option = $options
+    OutputPath = $OutputPath
+    InstanceName = $PowerAutomateName
+}
+
+$markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
