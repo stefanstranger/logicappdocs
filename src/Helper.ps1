@@ -48,7 +48,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Inputs       = if ($inputs) {Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))} else {$null}
+            Inputs       = if ($inputs) {Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))} else {$null | ConvertTo-Json}
         }
 
         if ($action.type -eq 'If') {
