@@ -27,7 +27,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.0
+Version: 1.1.1
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -210,8 +210,6 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-
-
 $invokePSDocumentSplat = @{
     Path = $templatePath
     Name = $templateName
@@ -221,7 +219,6 @@ $invokePSDocumentSplat = @{
     OutputPath = $OutputPath
     InstanceName = $($PowerAutomateName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')
 }
-
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
