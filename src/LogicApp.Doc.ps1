@@ -22,9 +22,9 @@ Document 'Azure-LogicApp-Documentation' {
    
     Section 'Logic App Workflow Diagram' {
         @"        
-```````mermaid
+``````mermaid
 $($InputObject.diagram)
-```````
+``````
 "@       
     }
     
