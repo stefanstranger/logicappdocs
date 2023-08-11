@@ -10,6 +10,12 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
+**Add error message**
+Add the error message output from the PowerShell command:
+```PowerShell
+Get-Error
+```
+
 **To Reproduce**
 Steps to reproduce the behavior:
 
