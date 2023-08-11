@@ -48,7 +48,12 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Inputs       = if ($inputs) {Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))} else {$null | ConvertTo-Json}
+            Inputs       = if ($inputs) {
+                Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))
+            }
+            else {
+                $null | ConvertTo-Json
+            } # Output is a json string
         }
 
         if ($action.type -eq 'If') {
@@ -187,8 +192,8 @@ Function Sort-Action {
                     }
                     else {
                         # When an action runs after a condition find orderid of last condition actionname
-                        if ($Actions | Where-Object {!($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
-                            $Actions | Where-Object {!($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
+                        if ($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
+                            $Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
                             Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                             # CurrentAction
                             $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
