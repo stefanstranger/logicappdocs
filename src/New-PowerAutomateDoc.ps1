@@ -106,7 +106,6 @@ Function Create-ExportPackage {
 
 #region Main Script
 
-<#
 #region login to Power Automate and get PowerAutomate Flow
 Write-Host ('Login to Power Automate and get PowerAutomate Flow') -ForegroundColor Green
 Get-Flow -EnvironmentName $EnvironmentName | Where-Object { $_.DisplayName -eq $PowerAutomateName } -OutVariable PowerAutomateFlow
@@ -126,7 +125,6 @@ Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (J
 Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
 Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $($env:TEMP) -Force
 #endregion
-#>
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
 $PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
