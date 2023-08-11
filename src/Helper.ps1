@@ -48,7 +48,12 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Inputs       = Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress)
+            Inputs       = if ($inputs) {
+                Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))
+            }
+            else {
+                $null | ConvertTo-Json
+            } # Output is a json string
         }
 
         if ($action.type -eq 'If') {
@@ -83,6 +88,9 @@ Function Sort-Action {
         $Actions
     )
 
+    # Turn input into an array. Otherwise count will not work.
+    $Actions = @($Actions)
+
     # Search for the action that has an empty RunAfter property
     $firstAction = $Actions | Where-Object { [string]::IsNullOrEmpty($_.RunAfter) } |
     Add-Member -MemberType NoteProperty -Name Order -Value 0 -PassThru
@@ -91,9 +99,10 @@ Function Sort-Action {
     # Define a variable to hold the current order index
     $indexNumber = 1
 
-    #Loop through all the actions 
+    #Loop through all the actions
+    Write-Verbose -Message ('Sorting {0} Actions' -f $($Actions.Count))
     for ($i = 1; $i -lt $Actions.Count; $i++) {
-        Write-Verbose -Message ('Processing currentaction {0}' -f $($currentAction.ActionName))
+        Write-Verbose -Message ('Processing currentaction {0} number {1} of {2} Actions in total' -f $($currentAction.ActionName), $i, $($Actions.Count))
         # Search for the action that has the first action's ActionName in the RunAfter property or the previous action's ActionName
         if (![string]::IsNullOrEmpty($firstAction)) {
             $Actions | Where-Object { $_.RunAfter -eq $firstAction.ActionName } | 
@@ -113,12 +122,15 @@ Function Sort-Action {
                         Write-Verbose -Message ('Setting RunAfter property {0} to Parent property value {1} for action {2}' -f $_.RunAfter, $_.Parent, $_.ActionName)
                         $_.RunAfter = $_.Parent
                     }
+                    else {
+                        Write-Verbose -Message ('Current action {0} with RunAfter property {1} has no Parent property' -f $_.ActionName, $_.RunAfter)
+                    }
                 }
                 # Iterate first the condition status true actions.
                 if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }  |
-                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) } 
+                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-True') -f $($currentAction.ActionName)) }
                     # Increment the indexNumber
                     $indexNumber++
                 }   
@@ -126,11 +138,25 @@ Function Sort-Action {
                     # Add Order property to the action that it's RunAfter property updated from the Parent property.
                     # This is the first action in a foreach loop.
                     # After this action the rest of rest of the foreach actions need to be processed.
-                    $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } |
-                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) }
-                    # Increment the indexNumber
-                    $indexNumber++
+                    if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } ) {
+                        $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) } |
+                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                        $currentAction = $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) -and ($null -ne $($_.Parent)) }
+                        # Increment the indexNumber
+                        $indexNumber++
+                    }
+                    else {
+                        # There is another action with the same RunAfter property that runs parallel with the current action.
+                        # Start with the first action that has the same RunAfter property.
+                        if ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) }) {
+                            $($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })[0] | 
+                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                            # CurrentAction will be empty if the ???
+                            $currentAction = $($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) })[0]
+                            # Increment the indexNumber
+                            $indexNumber++                    
+                        }
+                    }                    
                 }             
             }
             else {
@@ -143,10 +169,14 @@ Function Sort-Action {
                     # Increment the indexNumber
                     $indexNumber++                    
                 }
+                # Current error is that there can be an newly created action that does not have a paret property.???
                 elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } ) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                    $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
+                    # Fix the issue when currentAction is empty
+                    if ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }) {
+                        $currentAction = $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }
+                    }
                     # Increment the indexNumber
                     $indexNumber++
                 }
@@ -160,7 +190,18 @@ Function Sort-Action {
                         # Increment the indexNumber
                         $indexNumber++                    
                     }
-                }                         
+                    else {
+                        # When an action runs after a condition find orderid of last condition actionname
+                        if ($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
+                            $Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
+                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                            # CurrentAction
+                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                            # Increment the indexNumber
+                            $indexNumber++
+                        }
+                    }
+                }
             }                
         }
         Write-Verbose -Message ('Current action {0} with Order Id {1}' -f $($currentAction.ActionName), $($currentAction.Order) )
@@ -195,4 +236,22 @@ Function Remove-Secrets {
     # Remove the secrets from the Logic App Inputs
     $regexPattern = '(\"headers":\{"Authorization":"(Bearer|Basic) )[^"]*'
     $Inputs -replace $regexPattern, '$1******'
+}
+
+# When the input contains a HTML input content, this needs to be wrapped within a <textarea disabled> and </textarea> tag.
+Function Format-HTMLInputContent {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)]
+        $Inputs
+    )
+
+    # If Input contains HTML input content, remove '\n characters and wrap the input within a <textarea disabled> and </textarea> tag.
+    if ($Inputs -match '<html>') {
+        Write-Verbose -Message ('Found HTML input content in Action Inputs')
+        $($Inputs -replace '\\n', '') -replace '<html>', '<textarea disabled><html>' -replace '</html>', '</html></textarea>'
+    }
+    else {
+        $Inputs
+    }
 }

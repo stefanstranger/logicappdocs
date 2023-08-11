@@ -3,11 +3,11 @@
 #>
 
 $params = @{
-    EnvironmentName = '839eace6-59ab-4243-97ec-a5b8fcc104e4'
-    PowerAutomateName     = 'Notify of Canceled Meetings'
-    OutputPath       = '..\examples\'
-    Verbose          = $false
-    Debug            = $false
+    EnvironmentName   = '839eace6-59ab-4243-97ec-a5b8fcc104e4'
+    PowerAutomateName = 'Notify of Canceled Meetings'
+    OutputPath        = $($env:TEMP) 
+    Verbose           = $true
+    Debug             = $true
 }
 
 . ..\src\New-PowerAutomateDoc.ps1 @params

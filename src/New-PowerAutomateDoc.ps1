@@ -27,7 +27,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.0
+Version: 1.1.1
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -84,8 +84,6 @@ Function Create-ExportPackage {
     $body = @{
         includedResourceIds = @(
             "/providers/Microsoft.Flow/flows/$($flow.FlowName)"
-            $flow.Internal.properties.connectionReferences.PSObject.Properties.value.id
-            $flow.Internal.properties.connectionReferences.PSObject.Properties | Foreach-Object { $('{0}/connections/{1}' -f $($_.value.id), $($_.value.connectionName)) } 
         )
         details             = @{
             displayName       = $flow.DisplayName
@@ -120,12 +118,12 @@ Create-ExportPackage -Flow $PowerAutomateFlow -OutVariable packageDownload
 
 #region download PowerAutomate Flow Export Package
 Write-Host ('Download PowerAutomate Flow Export Package') -ForegroundColor Green
-Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName)))
+Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')))
 #endregion
 
 #region Unzip PowerAutomate Flow Export Package
 Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
-Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $($env:TEMP) -Force
+Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_'))) -DestinationPath $($env:TEMP) -Force
 #endregion
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
@@ -161,7 +159,6 @@ if ($VerbosePreference -eq 'Continue') {
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
 $mermaidCode = "graph TB" + [Environment]::NewLine
 $mermaidCode += "    $($triggers.name)" + [Environment]::NewLine
-
 
 # Group actions by parent property
 $objects | Group-Object -Property Parent | ForEach-Object {
@@ -199,7 +196,7 @@ if ($VerbosePreference -eq 'Continue') {
     Write-Verbose ($objects | Select-Object -Property ActionName, RunAfter, Type, Parent, Order | Sort-Object -Property Order | Format-Table | Out-String)
 }
 
-#region Generate Markdown documentation for Logic App Workflow
+#region Generate Markdown documentation for Power Automate Flow
 $InputObject = [pscustomobject]@{
     'PowerAutomateFlow' = [PSCustomObject]@{
         Name            = $PowerAutomateName
@@ -213,6 +210,15 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $PowerAutomateName
+$invokePSDocumentSplat = @{
+    Path = $templatePath
+    Name = $templateName
+    InputObject = $InputObject
+    Culture = 'en-us'
+    Option = $options
+    OutputPath = $OutputPath
+    InstanceName = $($PowerAutomateName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')
+}
+$markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion

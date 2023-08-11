@@ -83,9 +83,22 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 [Rene Modery](https://github.com/modery/PowerDocu) for his PowerDocu script that provided ideas for this solution. PowerDocu helps generate documentation for Power App canvas apps and Power Automate flows.
 
+[Andreas Cieslik](https://github.com/acieslik) for his feedback and help to resolve issues. Bib kudos to him to help improve this solution 🙏
+
 And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
 ## Change Log
+
+v1.1.1 - 2023-08-11
+* Bug fixes:
+  * [Fix for issue The property '$connections' cannot be found on this object](https://github.com/stefanstranger/logicappdocs/issues/6)
+  * [Fix for html code in action not correctly formatted in Actions Table](https://github.com/stefanstranger/logicappdocs/issues/9)
+  * [Fix for issue when flow only contains 1 action](https://github.com/stefanstranger/logicappdocs/issues/11)
+  * [Fix for issue when there cannot be any 'connectionReferences' found a Power Automate Flow](https://github.com/stefanstranger/logicappdocs/issues/15)
+  * [Fix for issue when Action Input is null](https://github.com/stefanstranger/logicappdocs/issues/16)
+  * [Fix for issue in Markdown Mermaid diagram output](https://github.com/stefanstranger/logicappdocs/issues/18)
+  * [Fix for issue when file has unallowed chars](https://github.com/stefanstranger/logicappdocs/issues/19)
+
 
 v1.1.0 - 2023-08-01
 * Added logic to create Markdown documentation for Power Automate Flows.
