@@ -83,7 +83,7 @@ Special thanks and shoutouts to [Prateek Singh](https://github.com/PrateekKumarS
 
 [Rene Modery](https://github.com/modery/PowerDocu) for his PowerDocu script that provided ideas for this solution. PowerDocu helps generate documentation for Power App canvas apps and Power Automate flows.
 
-[Andreas Cieslik](https://github.com/acieslik) for his feedback and help to resolve issues. Bib kudos to him to help improve this solution 🙏
+[Andreas Cieslik](https://github.com/acieslik) for his feedback and help to resolve issues. Big kudos to him to help improve this solution 🙏
 
 And finally some great PowerShell community members for their feedback and suggestions on Twitter!
 
