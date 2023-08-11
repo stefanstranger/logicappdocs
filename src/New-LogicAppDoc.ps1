@@ -226,6 +226,15 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $LogicAppName
+$invokePSDocumentSplat = @{
+    Path = $templatePath
+    Name = $templateName
+    InputObject = $InputObject
+    Culture = 'en-us'
+    Option = $options
+    OutputPath = $OutputPath
+    InstanceName = $LogicAppName
+}
+$markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('Logic App Workflow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
