@@ -8,7 +8,7 @@ $params = @{
     Location         = 'westeurope'
     FilePath         = '..\examples\logic-jiraintegration-demo.json'
     LogicAppName     = 'logic-jiraintegration-demo'
-    OutputPath       = '..\examples\'
+    OutputPath       = $($env:TEMP)
     Verbose          = $true
     Debug            = $false
 }
