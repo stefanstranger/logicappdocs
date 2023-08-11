@@ -9,7 +9,7 @@ $params = @{
     FilePath         = '..\examples\logic-jiraintegration-demo.json'
     LogicAppName     = 'logic-jiraintegration-demo'
     OutputPath       = '..\examples\'
-    Verbose          = $false
+    Verbose          = $true
     Debug            = $false
 }
 
