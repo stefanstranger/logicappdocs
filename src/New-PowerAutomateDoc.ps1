@@ -120,12 +120,12 @@ Create-ExportPackage -Flow $PowerAutomateFlow -OutVariable packageDownload
 
 #region download PowerAutomate Flow Export Package
 Write-Host ('Download PowerAutomate Flow Export Package') -ForegroundColor Green
-Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName)))
+Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')))
 #endregion
 
 #region Unzip PowerAutomate Flow Export Package
 Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
-Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName))) -DestinationPath $($env:TEMP) -Force
+Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_'))) -DestinationPath $($env:TEMP) -Force
 #endregion
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
@@ -213,6 +213,6 @@ $InputObject = [pscustomobject]@{
 
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
-$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $PowerAutomateName
+$markDownFile = Invoke-PSDocument -Path $templatePath -Name $templateName -InputObject $InputObject -Culture 'en-us' -Option $options -OutputPath $OutputPath -InstanceName $($PowerAutomateName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')
 Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
