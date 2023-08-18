@@ -27,7 +27,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.1
+Version: 1.1.2
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -180,7 +180,14 @@ foreach ($object in $objects) {
     if ($object | Get-Member -MemberType NoteProperty -Name 'RunAfter') {
         # Check if the runafter property is not empty
         if (![string]::IsNullOrEmpty($object.RunAfter)) {
-            $mermaidCode += "    $($object.RunAfter) --> $($object.ActionName)" + [Environment]::NewLine
+            if (($object.runAfter | Measure-Object).count -eq 1) {
+                $mermaidCode += "    $($object.RunAfter) --> $($object.ActionName)" + [Environment]::NewLine
+            }
+            else {
+                foreach ($runAfter in $object.RunAfter) {
+                    $mermaidCode += "    $runAfter --> $($object.ActionName)" + [Environment]::NewLine
+                }
+            }
         }
     }        
 }
