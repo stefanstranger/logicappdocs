@@ -89,6 +89,10 @@ And finally some great PowerShell community members for their feedback and sugge
 
 ## Change Log
 
+v1.1.2 - 2023-08-18
+* Bug fixes:
+  * [Fix for actions with multiple runafter properties](https://github.com/stefanstranger/logicappdocs/issues/23)
+
 v1.1.1 - 2023-08-11
 * Bug fixes:
   * [Fix for issue The property '$connections' cannot be found on this object](https://github.com/stefanstranger/logicappdocs/issues/6)
