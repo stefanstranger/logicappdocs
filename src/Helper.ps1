@@ -55,7 +55,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
-            Comment  = $description
+            Comment      = $description
             Inputs       = if ($inputs) {
                 Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))
             }
