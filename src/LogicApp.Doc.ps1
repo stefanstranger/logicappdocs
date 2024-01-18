@@ -34,8 +34,8 @@ $($InputObject.diagram)
         Section 'Actions' {            
             $($InputObject.actions) |                 
             Sort-Object -Property Order |  
-            Select-Object -Property 'ActionName', 'Type', 'RunAfter', @{Name = 'Inputs'; Expression = { Format-MarkdownTableJson -Json $($_.Inputs | ConvertFrom-Json | ConvertTo-Json -Depth 10) } } |
-            Table -Property 'ActionName', 'Type', 'RunAfter', 'Inputs'
+            Select-Object -Property 'ActionName', 'Comment', 'Type', 'RunAfter', @{Name = 'Inputs'; Expression = { Format-MarkdownTableJson -Json $($_.Inputs | ConvertFrom-Json | ConvertTo-Json -Depth 10) } } |
+            Table -Property 'ActionName', 'Comment', 'Type', 'RunAfter', 'Inputs'
         }
     }
 
