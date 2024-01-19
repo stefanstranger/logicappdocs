@@ -23,7 +23,10 @@ Param(
     [string]$LogicAppName,
 
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = (Get-Location).Path
+    [string]$OutputPath = (Get-Location).Path,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$replaceU0027
 )
 
 Set-StrictMode -Version 3.0
@@ -245,3 +248,10 @@ $invokePSDocumentSplat = @{
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('Logic App Workflow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
 #endregion
+
+#region replace \u0027 with ' in Markdown documentation for Logic App Workflow
+if($replaceU0027){
+    $pathToDocumentationFile = ($OutputPath + $LogicAppName + ".md")
+    $documentationFileData = Get-Content -Path $pathToDocumentationFile 
+    $documentationFileData -replace '\\u0027' , "'" | set-content -path $pathToDocumentationFile 
+}
