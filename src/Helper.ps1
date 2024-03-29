@@ -15,19 +15,34 @@ Function Get-Action {
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
         $actionName = $key -replace '[ |(|)|@]', '_'
+        Write-Verbose ('Action {0}' -f $actionName)
+        Write-Verbose ('Object {0}' -f $($action | ConvertTo-Json -Depth 10 ))
 
         # new runafter code
-        $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {            
-            $action.runAfter.PSObject.Properties.Name -replace '[ |(|)|@]', '_'
-        }
-        elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
-            # if Runafter is empty but has parent use parent.
-            $Parent -replace '(-False|-True)', ''
+        if ($action | Get-Member -MemberType Noteproperty -Name 'runafter') {
+            $runAfter = if (![string]::IsNullOrWhitespace($action.runafter)) {            
+                $action.runAfter.PSObject.Properties.Name -replace '[ |(|)|@]', '_'
+            }
+            elseif (([string]::IsNullOrWhitespace($action.runafter)) -and $Parent) {
+                # if Runafter is empty but has parent use parent.
+                $Parent -replace '(-False|-True)', ''
+            }
+            else {
+                # if Runafter is empty and has no parent use null.
+                $null
+            }
         }
         else {
-            # if Runafter is empty and has no parent use null.
-            $null
-        }
+            Write-Warning ('Action {0} has no runafter property' -f $actionName)
+            #Set runafter to parent if parent is not null
+            if ($Parent) {
+                $runAfter = $Parent
+            }
+            else {
+                $runAfter = $null
+            }
+        }     
+        
         
         $inputs = if ($action | Get-Member -MemberType Noteproperty -Name 'inputs') { 
             $($action.inputs)
