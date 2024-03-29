@@ -91,7 +91,7 @@ And finally some great PowerShell community members for their feedback and sugge
 
 v1.1.3 - 2024-03-29
 * Bug fixes:
-  * Fix for actions that don't have a runafter property.
+  * [Fix for actions that don't have a runafter property](https://github.com/stefanstranger/logicappdocs/issues/31)
 
 v1.1.2 - 2023-08-18
 * Bug fixes:
