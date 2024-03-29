@@ -9,6 +9,9 @@ Param(
     [string]$PowerAutomateName,
 
     [Parameter(Mandatory = $false)]
+    [string]$FilePath,
+
+    [Parameter(Mandatory = $false)]
     [string]$OutputPath = (Get-Location).Path
 )
 
@@ -27,7 +30,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.2
+Version: 1.1.3
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -106,28 +109,40 @@ Function Create-ExportPackage {
 
 #region Main Script
 
-#region login to Power Automate and get PowerAutomate Flow
-Write-Host ('Login to Power Automate and get PowerAutomate Flow') -ForegroundColor Green
-Get-Flow -EnvironmentName $EnvironmentName | Where-Object { $_.DisplayName -eq $PowerAutomateName } -OutVariable PowerAutomateFlow
-#endregion
+if (!($FilePath)) {
+    #region login to Power Automate and get PowerAutomate Flow
+    Write-Host ('Login to Power Automate and get PowerAutomate Flow') -ForegroundColor Green
+    Get-Flow -EnvironmentName $EnvironmentName | Where-Object { $_.DisplayName -eq $PowerAutomateName } -OutVariable PowerAutomateFlow
+    #endregion
 
-#region Create PowerAutomate Flow Export Package
-Write-Host ('Create PowerAutomate Flow Export Package') -ForegroundColor Green
-Create-ExportPackage -Flow $PowerAutomateFlow -OutVariable packageDownload
-#endregion
+    #region Create PowerAutomate Flow Export Package
+    Write-Host ('Create PowerAutomate Flow Export Package') -ForegroundColor Green
+    Create-ExportPackage -Flow $PowerAutomateFlow -OutVariable packageDownload
+    #endregion
 
-#region download PowerAutomate Flow Export Package
-Write-Host ('Download PowerAutomate Flow Export Package') -ForegroundColor Green
-Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')))
-#endregion
+    #region download PowerAutomate Flow Export Package
+    Write-Host ('Download PowerAutomate Flow Export Package') -ForegroundColor Green
+    Start-BitsTransfer -Source $($packageDownload.packageLink.value) -Destination (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')))
+    #endregion
+
+    $zipPath = (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')))
+    $packageName = $($packagedownload.resources.psobject.Properties.name[0])
+}
+else {
+    $zipPath = $FilePath    
+}
 
 #region Unzip PowerAutomate Flow Export Package
 Write-Host ('Unzip PowerAutomate Flow Export Package') -ForegroundColor Green
-Expand-Archive -LiteralPath (Join-Path $($env:TEMP) ('{0}.zip' -f $($PowerAutomateFlow.DisplayName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_'))) -DestinationPath $($env:TEMP) -Force
+Expand-Archive -LiteralPath $zipPath -DestinationPath $($env:TEMP) -Force
+if ($FilePath) {
+    #Find the package name from the unzipped folder    
+    $packageName = (Get-ChildItem -Path $($env:TEMP) -Recurse -Filter 'definition.json' -ErrorAction SilentlyContinue | Sort-Object -Property CreationTime -Descending | Select-Object -First 1).Directory.BaseName
+}
 #endregion
 
 #region refactor PowerAutomate Flow definition.json to align with LogicApp expected format
-$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packagedownload.resources.psobject.Properties.name[0]))) -Raw | ConvertFrom-Json
+$PowerAutomateFlowJson = Get-Content -Path (Join-Path $($env:TEMP) ('Microsoft.Flow\flows\{0}\definition.json' -f $($packageName))) -Raw | ConvertFrom-Json
 $PowerAutomateFlowDefinition = $PowerAutomateFlowJson.properties.definition
 #endregion
 
@@ -218,12 +233,12 @@ $InputObject = [pscustomobject]@{
 $options = New-PSDocumentOption -Option @{ 'Markdown.UseEdgePipes' = 'Always'; 'Markdown.ColumnPadding' = 'Single' };
 $null = [PSDocs.Configuration.PSDocumentOption]$Options
 $invokePSDocumentSplat = @{
-    Path = $templatePath
-    Name = $templateName
-    InputObject = $InputObject
-    Culture = 'en-us'
-    Option = $options
-    OutputPath = $OutputPath
+    Path         = $templatePath
+    Name         = $templateName
+    InputObject  = $InputObject
+    Culture      = 'en-us'
+    Option       = $options
+    OutputPath   = $OutputPath
     InstanceName = $($PowerAutomateName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')
 }
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
