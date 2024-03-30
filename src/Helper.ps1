@@ -206,14 +206,28 @@ Function Sort-Action {
                         $indexNumber++                    
                     }
                     else {
-                        # When an action runs after a condition find orderid of last condition actionname
+                        # When an action runs after a condition find orderid of last condition actionname.
+                        # Fix issue when an async response is never used as a runafter property. Then use action that has same RunAfter propery as the current action.
                         if ($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
-                            $Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
-                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
-                            # CurrentAction
-                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
-                            # Increment the indexNumber
-                            $indexNumber++
+                            # Check there is only one action, if not then use action that has same RunAfter propery as the current action.
+                            if (($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent))}).count -eq 1) {
+                                $Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
+                                Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
+                                # CurrentAction
+                                $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                # Increment the indexNumber
+                                $indexNumber++
+                            }
+                            else {
+                                $Actions | Where-Object { $_.RunAfter -eq $($currentAction.RunAfter) -and $_.ActionName -ne $currentAction.ActionName } |
+                                Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                # CurrentAction
+                                $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                # Increment the indexNumber
+                                $indexNumber++
+
+                            }
+                            
                         }
                     }
                 }
