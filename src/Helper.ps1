@@ -185,7 +185,7 @@ Function Sort-Action {
                     $indexNumber++                    
                 }
                 # Current error is that there can be an newly created action that does not have a paret property.???
-                elseif ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } ) {
+                elseif (($null -ne $currentAction.Parent) -and ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } )) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                     # Fix the issue when currentAction is empty

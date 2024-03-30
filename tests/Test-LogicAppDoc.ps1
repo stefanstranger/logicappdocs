@@ -11,6 +11,7 @@ $params = @{
     OutputPath       = $($env:TEMP)
     Verbose          = $true
     Debug            = $false
+    Show             = $true
 }
 
 . ..\src\New-LogicAppDoc.ps1 @params

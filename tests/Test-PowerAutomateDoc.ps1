@@ -8,6 +8,7 @@ $params = @{
     OutputPath        = $($env:TEMP) 
     Verbose           = $true
     Debug             = $true
+    Show              = $true
 }
 
 . ..\src\New-PowerAutomateDoc.ps1 @params

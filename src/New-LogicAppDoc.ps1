@@ -23,7 +23,10 @@ Param(
     [string]$LogicAppName,
 
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = (Get-Location).Path
+    [string]$OutputPath = (Get-Location).Path,
+
+    [Parameter(Mandatory = $false)]
+    [bool]$Show = $false
 )
 
 Set-StrictMode -Version 3.0
@@ -244,4 +247,11 @@ $invokePSDocumentSplat = @{
 }
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('Logic App Workflow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
+#endregion
+
+#region Open Markdown document if show parameter is used
+if ($Show) {
+    Write-Host ('Opening Markdown document in default Markdown viewer') -ForegroundColor Green
+    Start-Process -FilePath $markDownFile.FullName
+}
 #endregion
