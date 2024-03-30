@@ -12,7 +12,10 @@ Param(
     [string]$FilePath,
 
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = (Get-Location).Path
+    [string]$OutputPath = (Get-Location).Path,
+
+    [Parameter(Mandatory = $false)]
+    [bool]$Show = $false
 )
 
 Set-StrictMode -Version 3.0
@@ -30,7 +33,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.3
+Version: 1.1.4
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -243,4 +246,11 @@ $invokePSDocumentSplat = @{
 }
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
 Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
+#endregion
+
+#region Open Markdown document if show parameter is used
+if ($Show) {
+    Write-Host ('Opening Markdown document in default Markdown viewer') -ForegroundColor Green
+    Start-Process -FilePath $markDownFile.FullName
+}
 #endregion
