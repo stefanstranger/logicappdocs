@@ -130,6 +130,8 @@ Function Sort-Action {
         else {
             # Search for actions that have the previous action's ActionName in the RunAfter property
             # If there are multiple actions with the same RunAfter property, set the RunAfter property to the Parent property
+            # Why does this logic changes the RunAfter property to the Parent property for the action getCompany Try? It should be getSecrets.
+            # This is caused by the action get-atApiIntegrationCode that does not have an runafter property. This is la
             if (($Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | Measure-Object).count -gt 1) {
                 $Actions | Where-Object { $_.RunAfter -eq $($currentAction.ActionName) } | ForEach-Object {                     
                     # Check if the action has a Parent Value
@@ -184,7 +186,7 @@ Function Sort-Action {
                     # Increment the indexNumber
                     $indexNumber++                    
                 }
-                # Current error is that there can be an newly created action that does not have a paret property.???
+                # Current error is that there can be an newly created action that does not have a parent property.???
                 elseif (($null -ne $currentAction.Parent) -and ($Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) } )) {
                     $Actions | Where-Object { $_.RunAfter -eq $(('{0}-False') -f $(($currentAction.Parent).Substring(0, ($currentAction.Parent).length - 5))) }  |
                     Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
@@ -210,7 +212,7 @@ Function Sort-Action {
                         # Fix issue when an async response is never used as a runafter property. Then use action that has same RunAfter propery as the current action.
                         if ($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }) {
                             # Check there is only one action, if not then use action that has same RunAfter propery as the current action.
-                            if (($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent))}).count -eq 1) {
+                            if (($Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) }).count -eq 1) {
                                 $Actions | Where-Object { !($_ | Get-Member -MemberType NoteProperty 'Order') -and (![string]::IsNullOrEmpty($_.Parent)) } | 
                                 Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber 
                                 # CurrentAction
@@ -218,16 +220,60 @@ Function Sort-Action {
                                 # Increment the indexNumber
                                 $indexNumber++
                             }
-                            else {
+                            elseif ($Actions | Where-Object { $_.RunAfter -eq $($currentAction.RunAfter) -and $_.ActionName -ne $currentAction.ActionName } ) {
                                 $Actions | Where-Object { $_.RunAfter -eq $($currentAction.RunAfter) -and $_.ActionName -ne $currentAction.ActionName } |
                                 Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
                                 # CurrentAction
                                 $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
                                 # Increment the indexNumber
                                 $indexNumber++
-
                             }
-                            
+                            # Move up one parent level and check if there is an action that has the same RunAfter property as the current action.
+                            else {
+                                # Get curentAction parent's parent. #Find Action with RunAfter value getSecrets
+                                # Why does the action getCompany Try as a RunAfter property? It should be getSecrets.
+                                # Steps when currentaction is not used as runafter property for any actions.
+                                # 1. Get parent of currentAction Name (getSecrets)
+                                # 2. Check for action with runafter of parent of currentaction. (does not exists)
+                                # 3. Get grandparent of currentaction's parent (try)
+                                # 4. If not found check for Action with no order property and runafter and and parent having value of grandparent.
+                                # $parentCurrentAction = $currentAction.Parent
+                                if (!($Actions | Where-Object { $_.RunAfter -eq $currentAction.Parent -and !$($_ | get-member -Name 'Order') })) {
+                                    # Handle parent being True of false in name. Remove -True or -False from parent name.
+                                    $currentparent = $($currentAction.Parent).Replace("-True", "").Replace("-False", "")
+                                    $grandparent = ($Actions | Where-Object { $_.ActionName -eq $currentparent }).Parent
+                                    if ($Actions | Where-Object { $_.RunAfter -eq $grandparent -and $_.Parent -eq $grandparent -and !$($_ | get-member -Name 'Order') }) {
+                                        $Actions | Where-Object { $_.RunAfter -eq $grandparent -and $_.Parent -eq $grandparent -and !$($_ | get-member -Name 'Order') } |
+                                        Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                        # CurrentAction
+                                        $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                        # Increment the indexNumber
+                                        $indexNumber++
+                                    }
+                                    else {
+                                        # Get overgrandparent of currentaction's parent.
+                                        if (($Actions | Where-Object { $_.ActionName -eq $grandparent }).Parent) {
+                                            $overgrandparent = ($Actions | Where-Object { $_.ActionName -eq $grandparent }).Parent
+                                            $Actions | Where-Object { $_.RunAfter -eq $overgrandparent -and $_.Parent -eq $overgrandparent -and !$($_ | get-member -Name 'Order') } |
+                                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                            # CurrentAction
+                                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                            # Increment the indexNumber
+                                            $indexNumber++
+                                        }
+                                        else {
+                                            $Actions | Where-Object { $_.RunAfter -eq $grandparent  -and !$($_ | get-member -Name 'Order') } |
+                                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                            # CurrentAction
+                                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                            # Increment the indexNumber
+                                            $indexNumber++
+                                        }
+                                        
+                                    }
+
+                                }
+                            }                            
                         }
                     }
                 }
