@@ -92,6 +92,7 @@ And finally some great PowerShell community members for their feedback and sugge
 v1.1.5 - 2024-04-02
 * Bug fixes
   * [Fix for Azure DevOps wiki not supporting the mermaid diagram subgraphs. As a workaround the mermaid diagram is converted to png, using the mermaid-cli.](https://github.com/stefanstranger/logicappdocs/issues/13)
+  
 v1.1.4 - 2024-04-02
 * Bug fixes
   * [Fix for issue Length cannot be less than zero.](https://github.com/stefanstranger/logicappdocs/issues/26)
