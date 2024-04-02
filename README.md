@@ -89,6 +89,10 @@ And finally some great PowerShell community members for their feedback and sugge
 
 ## Change Log
 
+v1.1.4 - 2024-04-02
+* Bug fixes
+  * [Fix for issue Length cannot be less than zero.](https://github.com/stefanstranger/logicappdocs/issues/26)
+
 v1.1.3 - 2024-03-29
 * Bug fixes:
   * [Fix for actions that don't have a runafter property](https://github.com/stefanstranger/logicappdocs/issues/31)
