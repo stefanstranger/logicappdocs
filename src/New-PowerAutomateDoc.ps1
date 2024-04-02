@@ -15,6 +15,9 @@ Param(
     [string]$OutputPath = (Get-Location).Path,
 
     [Parameter(Mandatory = $false)]
+    [boolean]$ConvertToADOMarkdown = $false,
+
+    [Parameter(Mandatory = $false)]
     [bool]$Show = $false
 )
 
@@ -33,7 +36,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.4
+Version: 1.1.5
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -245,12 +248,37 @@ $invokePSDocumentSplat = @{
     InstanceName = $($PowerAutomateName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_')
 }
 $markDownFile = Invoke-PSDocument @invokePSDocumentSplat
-Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $($markDownFile.FullName)) -ForegroundColor Green
+$outputFile = $($markDownFile.FullName)
+# If file contains space remove the spaces and rename file
+if ($outputFile -match '\s') {
+    $newOutputFile = $outputFile -replace '\s', '_'
+    if (Test-Path -Path $newOutputFile) {
+        Remove-Item -Path $newOutputFile -Force
+    }
+    Rename-Item -Path $outputFile -NewName $newOutputFile -Force
+    $outputFile = $newOutputFile
+}
+Write-Host ('PowerAutomate Flow Markdown document is being created at {0}' -f $outputFile) -ForegroundColor Green
 #endregion
+
+#region Convert Markdown to ADOMarkdown if ConvertTo-ADOMarkdown parameter is used
+if ($ConvertToADOMarkdown) {
+    # Run Bootstrap.ps1 to install mermaid-cli
+    . (Join-Path $PSScriptRoot 'Bootstrap.ps1')
+    Write-Host ('Converting Markdown to ADOMarkdown') -ForegroundColor Green
+    $converttedOutputFile = ($outputFile -replace '.md$', '-ado.md')
+    & {mmdc -i $outputFile  -o $converttedOutputFile -e png}
+    Write-Host ('ADOMarkdown document is being created at {0}' -f $converttedOutputFile) -ForegroundColor Green
+}
 
 #region Open Markdown document if show parameter is used
 if ($Show) {
     Write-Host ('Opening Markdown document in default Markdown viewer') -ForegroundColor Green
-    Start-Process -FilePath $markDownFile.FullName
+    if ($ConvertToADOMarkdown) {
+        Start-Process -FilePath $converttedOutputFile
+    }
+    else {
+        Start-Process -FilePath $outputFile
+    }
 }
 #endregion
