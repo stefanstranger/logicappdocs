@@ -8,6 +8,7 @@ $params = @{
     OutputPath        = $($env:TEMP) 
     Verbose           = $true
     Debug             = $true
+    ConvertToADOMarkdown = $false
     Show              = $true
 }
 

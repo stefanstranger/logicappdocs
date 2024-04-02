@@ -9,6 +9,7 @@ $params = @{
     FilePath          = 'c:\temp\DevSecOpsCapabilityFlow_20240328153930.zip'
     Verbose           = $true
     Debug             = $true
+    ConvertToADOMarkdown = $false
     Show              = $true
 }
 
