@@ -52,6 +52,13 @@ Function Get-Action {
         }
 
         $type = $action.type
+        
+        $Description = if ($action | Get-Member -MemberType Noteproperty -Name 'Description')  {
+            $action.Description
+        }
+        else{
+            $null
+        }
 
         # new ChildActions code
         $childActions = if (($action | Get-Member -MemberType Noteproperty -Name 'Actions') -and ($action.Actions.PSObject.Properties | measure-object).count -gt 0) { $action.Actions.PSObject.Properties.Name } else { $null }
@@ -63,6 +70,7 @@ Function Get-Action {
             Type         = $type
             Parent       = $Parent
             ChildActions = $childActions
+            Comment      = $description
             Inputs       = if ($inputs) {
                 Format-HTMLInputContent -Inputs $(Remove-Secrets -Inputs $($inputs | ConvertTo-Json -Depth 10 -Compress))
             }
