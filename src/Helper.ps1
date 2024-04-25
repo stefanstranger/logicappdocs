@@ -14,7 +14,7 @@ Function Get-Action {
 
     foreach ($key in $Actions.PSObject.Properties.Name) {
         $action = $Actions.$key
-        $actionName = $key -replace '[ |(|)|@]', '_'
+        $actionName = $key -replace '[|(|)|@]', '_'
         Write-Verbose ('Action {0}' -f $actionName)
         Write-Verbose ('Object {0}' -f $($action | ConvertTo-Json -Depth 10 ))
 

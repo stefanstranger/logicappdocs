@@ -36,7 +36,7 @@ $WarningPreference = 'SilentlyContinue'
                                                                                                                                                          
 Author: Stefan Stranger
 Github: https://github.com/stefanstranger/logicappdocs
-Version: 1.1.5
+Version: 1.1.6
 
 "@.foreach({
         Write-Host $_ -ForegroundColor Magenta
@@ -179,7 +179,7 @@ if ($VerbosePreference -eq 'Continue') {
 # Create the Mermaid code
 Write-Host ('Creating Mermaid Diagram for Logic App') -ForegroundColor Green
 $mermaidCode = "graph TB" + [Environment]::NewLine
-$mermaidCode += "    $($triggers.name)" + [Environment]::NewLine
+$mermaidCode += "    $($triggers.name -replace '[|(|)|@]', '_')" + [Environment]::NewLine
 
 # Group actions by parent property
 $objects | Group-Object -Property Parent | ForEach-Object {
@@ -215,7 +215,7 @@ foreach ($object in $objects) {
 
 # Create link between trigger and first action
 $firstActionLink = ($objects | Where-Object { $_.Runafter -eq $null }).ActionName
-$mermaidCode += "    $($triggers.name) --> $firstActionLink" + [Environment]::NewLine
+$mermaidCode += "    $($triggers.name -replace '[|(|)|@]', '_') --> $firstActionLink" + [Environment]::NewLine
 
 Sort-Action -Actions $objects
 
