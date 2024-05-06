@@ -254,12 +254,26 @@ Function Sort-Action {
                                         # Get overgrandparent of currentaction's parent.
                                         if (($Actions | Where-Object { $_.ActionName -eq $grandparent }).Parent) {
                                             $overgrandparent = ($Actions | Where-Object { $_.ActionName -eq $grandparent }).Parent
-                                            $Actions | Where-Object { $_.RunAfter -eq $overgrandparent -and $_.Parent -eq $overgrandparent -and !$($_ | get-member -Name 'Order') } |
-                                            Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
-                                            # CurrentAction
-                                            $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
-                                            # Increment the indexNumber
-                                            $indexNumber++
+                                            if ($Actions | Where-Object { $_.RunAfter -eq $overgrandparent -and $_.Parent -eq $overgrandparent -and !$($_ | get-member -Name 'Order') }) {
+                                                $Actions | Where-Object { $_.RunAfter -eq $overgrandparent -and $_.Parent -eq $overgrandparent -and !$($_ | get-member -Name 'Order') } |
+                                                Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                                # CurrentAction
+                                                $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                                # Increment the indexNumber
+                                                $indexNumber++
+                                            }
+                                            else {
+                                                # Find Action with RunAfer containing some of the overgrandparent name
+                                                # Overgrandparent can end on -True or -False so remove that part.
+                                                $overgrandparent = $overgrandparent.Replace("-True", "").Replace("-False", "")
+                                                $Actions | Where-Object { $_.RunAfter -contains $overgrandparent -and !$($_ | get-member -Name 'Order') } |
+                                                    Add-Member -MemberType NoteProperty -Name Order -Value $indexNumber
+                                                # CurrentAction
+                                                $currentAction = ($Actions | Where-Object { ($_ | Get-Member -MemberType NoteProperty 'Order') -and ($_.Order -eq $indexNumber) })
+                                                # Increment the indexNumber
+                                                $indexNumber++
+                                            }
+                                            
                                         }
                                         else {
                                             $Actions | Where-Object { $_.RunAfter -eq $grandparent  -and !$($_ | get-member -Name 'Order') } |
